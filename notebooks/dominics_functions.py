@@ -21,33 +21,36 @@ bin_col_names_2010_2020 = ['5.0118723e-09', '5.6234133e-09', '6.3095734e-09',
        '2.8183829e-07', '3.1622777e-07', '3.5481339e-07', '3.9810717e-07',
        '4.4668359e-07', '5.0118723e-07', '5.6234133e-07', '6.3095734e-07',
        '7.0794578e-07']
-additional_2010_2020 = ['Year', 'Month', 'Day', 'Hour', 'Minute', 'unknown1','unknown2','unknown3','unknown4','unknown5, unknown6',
-              'unknown7','unknown8','unknown9']  
+additional_2010_2020 = ['Year', 'Month', 'Day', 'Hour', 'Minute', 'UFCPC','CPC3010','Ntot','unknown4','unknown5', 'unknown6',
+              'unknown7','unknown8']  
+
 dict_season_to_season_long_name = {'Summer':'Summer (JJAS)', 'Slow build up': 'Slow build up  (ONDJ)', 
                                    'Arctic Haze':'Arctic Haze (FMAM)','':''}               
           
        
-def get_columns_2010_2020(bin_col_names_2010_2020, additional_2010_2020):
+def get_columns_2010_2020(additional_2010_2020, bin_col_names_2010_2020):
     """[YYYY, MM, DD, HH, mm, UF(?)CPC, CPC3010, N_int, bin1:end, numflag]. Sizes in m and dN/dlogdp in cm-3. This data is level 2."""
     columns = additional_2010_2020 + bin_col_names_2010_2020 + ['flag']
     return columns  
     
 def load_and_append_2010_2020(inpath, name_in_file):
     """[YYYY, MM, DD, HH, mm, UF(?)CPC, CPC3010, N_int, bin1:end, numflag]. Sizes in m and dN/dlogdp in cm-3. This data is level 2."""    
-    columns = get_columns_2010_2020(bin_col_names_2010_2020, additional_2010_2020)    
+    cols = get_columns_2010_2020(additional_2010_2020, bin_col_names_2010_2020)    
+    print(cols)
     DFs = []
     folder = glob.glob(inpath+str(name_in_file)+'*.dat')
     folder.sort()
     for file in folder: 
         print(file)
-        ds = pd.read_csv(file, sep='\s+',index_col=False, skiprows=1, names=columns)     
+        ds = pd.read_csv(file, sep='\s+',index_col=False, skiprows=1, names=cols)     
         ds[['Year', 'Month', 'Day', 'Hour', 'Minute']] = ds[['Year', 'Month', 'Day', 'Hour', 'Minute']].astype(int)
         ds['DateTime'] = ds[['Year', 'Month', 'Day', 'Hour', 'Minute']].apply(lambda s : datetime.datetime(*s),axis = 1)
         ds = ds.drop(['Year', 'Month', 'Day', 'Hour', 'Minute'], axis=1)
         ds = ds.set_index('DateTime')        
         print("Size without flags removed: "+str(len(ds)))
         ds = ds[ds.loc[:,'flag'] != 0.999] #remove these
-        print("Size flags removed: "+str(len(ds)))        
+        print("Size flags removed: "+str(len(ds)))  
+        
         DFs.append(ds)
     return DFs
     
@@ -55,21 +58,26 @@ def concat_df_2010_2020(df_list):
     appended_data = []
     for i in range(len(df_list)):         
         df = df_list[i]     
-        if str(df.index.dtype) != 'datetime64[ns]':                
-            datetime = pd.DataFrame({'year': df.iloc[:, 0],
-                    'month': df.iloc[:, 1],
-                    'day': df.iloc[:, 2],
-                    'hour': df.iloc[:, 3],
-                    'minute': df.iloc[:, 4]})
-            df.index = pd.to_datetime(datetime)         
-            df.drop(df.columns[[0,1,2,3,4]], axis=1, inplace=True)          
-        bin_col_names_floats = [float(i)*10**9 for i in bin_col_names_2010_2020]
-        cols = np.around(bin_col_names_floats, decimals=3)
-        cols = np.asarray(cols)         
-        df = df[bin_col_names_2010_2020]        
-        df.columns = cols
+#         if str(df.index.dtype) != 'datetime64[ns]':                
+#             datetime = pd.DataFrame({'year': df.iloc[:, 0],
+#                     'month': df.iloc[:, 1],
+#                     'day': df.iloc[:, 2],
+#                     'hour': df.iloc[:, 3],
+#                     'minute': df.iloc[:, 4]})
+#             df.index = pd.to_datetime(datetime)         
+#             df.drop(df.columns[[0,1,2,3,4]], axis=1, inplace=True)          
+#         bin_col_names_floats = [float(i)*10**9 for i in bin_col_names_2010_2020]
+#         cols = np.around(bin_col_names_floats, decimals=3)
+#         cols = np.asarray(cols)         
+#         df = df[bin_col_names_2010_2020]        
+#         df.columns = cols
         appended_data.append(df)        
-    appended_data = pd.concat(appended_data, sort=True)    
+    appended_data = pd.concat(appended_data, sort=True)   
+    add_cols = ['UFCPC','CPC3010','Ntot','unknown4','unknown5', 'unknown6',
+              'unknown7','unknown8']
+    cols = get_columns_2010_2020(add_cols, bin_col_names_2010_2020)    
+    appended_data = appended_data.reindex(cols, axis = 1)
+    appended_data.drop(['unknown4','unknown5', 'unknown6','unknown7','unknown8'], axis = 1, inplace=True)
     return appended_data
     
 def remove_cols_with_same_value(df):    

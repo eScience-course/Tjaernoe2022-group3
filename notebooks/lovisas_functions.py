@@ -9,6 +9,7 @@ import cmocean
 from matplotlib import cm
 import warnings
 
+cpc_columns = ['UFCPC', 'CPC3010']
 bin_col_names_2010_2020 = ['5.0118723e-09', '5.6234133e-09', '6.3095734e-09',
        '7.0794578e-09', '7.9432823e-09', '8.9125094e-09', '1.0000000e-08',
        '1.1220185e-08', '1.2589254e-08', '1.4125375e-08', '1.5848932e-08',
@@ -66,9 +67,10 @@ def concat_df_2010_2020(df_list):
         bin_col_names_floats = [float(i)*10**9 for i in bin_col_names_2010_2020]
         cols = np.around(bin_col_names_floats, decimals=3)
         cols = np.asarray(cols)         
-        df = df[bin_col_names_2010_2020]        
+        #df = df[bin_col_names_2010_2020]        
         df.columns = cols
-        appended_data.append(df)        
+        appended_data.append(df)
+        
     appended_data = pd.concat(appended_data, sort=True)    
     return appended_data
     
