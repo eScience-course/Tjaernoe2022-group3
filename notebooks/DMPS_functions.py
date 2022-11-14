@@ -9,6 +9,8 @@ import cmocean
 from matplotlib import cm
 import warnings
 
+
+
 bin_col_names_2010_2020 = ['5.0118723e-09', '5.6234133e-09', '6.3095734e-09',
        '7.0794578e-09', '7.9432823e-09', '8.9125094e-09', '1.0000000e-08',
        '1.1220185e-08', '1.2589254e-08', '1.4125375e-08', '1.5848932e-08',
@@ -21,6 +23,9 @@ bin_col_names_2010_2020 = ['5.0118723e-09', '5.6234133e-09', '6.3095734e-09',
        '2.8183829e-07', '3.1622777e-07', '3.5481339e-07', '3.9810717e-07',
        '4.4668359e-07', '5.0118723e-07', '5.6234133e-07', '6.3095734e-07',
        '7.0794578e-07']
+       
+bin_col_names_DMPS = bin_col_names_2010_2020.copy()
+       
 additional_2010_2020 = ['Year', 'Month', 'Day', 'Hour', 'Minute', 'UFCPC','CPC3010','Ntot','unknown4','unknown5', 'unknown6',
               'unknown7','unknown8']  
 
@@ -33,7 +38,13 @@ def get_columns_2010_2020(additional_2010_2020, bin_col_names_2010_2020):
     columns = additional_2010_2020 + bin_col_names_2010_2020 + ['flag']
     return columns  
     
-def load_and_append_2010_2020(inpath, name_in_file):
+def get_bin_column_string_list():
+    '''Return a list of strings with bin column namnes, i.e. sizes in DMPS data.'''
+    global bin_col_names_DMPS
+    bin_col_list = bin_col_names_DMPS.copy()
+    return bin_col_list    
+    
+def load_and_append_DMPS(inpath, name_in_file):
     """[YYYY, MM, DD, HH, mm, UF(?)CPC, CPC3010, N_int, bin1:end, numflag]. Sizes in m and dN/dlogdp in cm-3. This data is level 2."""    
     cols = get_columns_2010_2020(additional_2010_2020, bin_col_names_2010_2020)    
     print(cols)
@@ -54,7 +65,7 @@ def load_and_append_2010_2020(inpath, name_in_file):
         DFs.append(ds)
     return DFs
     
-def concat_df_2010_2020(df_list):    
+def concat_df_DMPS(df_list):    
     appended_data = []
     for i in range(len(df_list)):         
         df = df_list[i]     
