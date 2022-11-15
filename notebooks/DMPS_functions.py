@@ -65,24 +65,41 @@ def load_and_append_DMPS(inpath, name_in_file):
         DFs.append(ds)
     return DFs
     
-def concat_df_DMPS(df_list):    
+def get_bins(bin_col_list):
+    '''A function that takes in a list of non-rounded bin midpoint diameters as strings, \
+    and rounds the values. A list of mid point diameteters with fewer decimals is resturned.'''
+    
+    # Turn string items in list to floats and round to 3 decimals
+    bin_col_list_floats = [float(i)*10**9 for i in bin_col_list]
+    bin_cols = np.around(bin_col_list_floats,decimals=3)
+    bin_cols = np.asarray(bin_cols)
+    
+    # Loop over all list items and change them back to string items.
+    bin_cols = [str(x) for x in bin_cols] 
+    
+    return bin_cols
+    
+def renameDpColumns(df_DMPS, bin_col_list):
+    '''Rename the midpoint bin column headings in bin_col_list \
+    in DMPS dataframe to rounded values.'''
+    
+    # Get the list of rounded bin midpoint diameters 
+    bin_cols = get_bins(bin_col_list)
+
+    # Rename all columns 
+    dict_cols_to_goodnames = dict(zip(bin_col_list, bin_cols))
+   
+    df_DMPS = df_DMPS.rename(dict_cols_to_goodnames, axis=1)
+    
+    return df_DMPS
+    
+def concat_df_DMPS(df_list):
+    '''Drop columns that are not used and make one large dataframe containg all data from list of dataframes.'''
     appended_data = []
     for i in range(len(df_list)):         
         df = df_list[i]     
-#         if str(df.index.dtype) != 'datetime64[ns]':                
-#             datetime = pd.DataFrame({'year': df.iloc[:, 0],
-#                     'month': df.iloc[:, 1],
-#                     'day': df.iloc[:, 2],
-#                     'hour': df.iloc[:, 3],
-#                     'minute': df.iloc[:, 4]})
-#             df.index = pd.to_datetime(datetime)         
-#             df.drop(df.columns[[0,1,2,3,4]], axis=1, inplace=True)          
-#         bin_col_names_floats = [float(i)*10**9 for i in bin_col_names_2010_2020]
-#         cols = np.around(bin_col_names_floats, decimals=3)
-#         cols = np.asarray(cols)         
-#         df = df[bin_col_names_2010_2020]        
-#         df.columns = cols
-        appended_data.append(df)        
+        appended_data.append(df)  
+        
     appended_data = pd.concat(appended_data, sort=True)   
     add_cols = ['UFCPC','CPC3010','Ntot','unknown4','unknown5', 'unknown6',
               'unknown7','unknown8']
@@ -90,6 +107,60 @@ def concat_df_DMPS(df_list):
     appended_data = appended_data.reindex(cols, axis = 1)
     appended_data.drop(['unknown4','unknown5', 'unknown6','unknown7','unknown8'], axis = 1, inplace=True)
     return appended_data
+    
+
+def getFloatDiameterListAndArray():
+    '''Take in list of non-rounded midpoint diameters as strings. \
+    Return list and array with numeric values.'''
+    global bin_col_names_DMPS
+    bin_col_list = bin_col_names_DMPS.copy()
+    
+    diameterList = [float(i) for i in bin_col_list]
+    diameters = np.asarray(diameterList)
+    
+    return diameterList, diameters 
+
+def calcNtot(diameters, df):
+    '''Integrate the log-normal ditribution for given diameters in dataframe df.'''
+    # Create array to store upper bin boudaries
+    upperBoundaries = np.empty(0)
+    diameter_list = list(diameters)
+
+    # Create array to store the number concentration in each bin
+    dNs = np.empty(0)
+    upperLimits = []
+
+    for Dp in range(len(diameter_list)-1):
+
+        # Calulate the upper bin from the geo mean of the midpoint diamters as they are equally spaced on a log scale
+        upperLimits.append(np.sqrt( diameter_list[Dp] * diameter_list[Dp+1] ) )
+
+    upperLimits = np.array(upperLimits)
+
+    # Calulate the endpoints, ie the first lower limit and the last upper limit
+    firstLimit = diameter_list[0]**2 / upperLimits[0] # This is actually the first lower limit, but its needed for the first binwidth
+    lastLimit = diameter_list[-1]**2 / upperLimits[-1]
+
+    upperBoundaries = np.insert(upperLimits, 0, firstLimit) 
+    upperBoundaries = np.append(upperBoundaries, lastLimit)
+
+    # Calculate dlogDp from the boundaries
+    dlogDp = np.log10(upperBoundaries[1:]) - np.log10(upperBoundaries[:-1])
+
+    # Calculate the particle concentration in each bin (dN) by multiplying dNdlogD with dlogD
+
+    lenDiam = len(diameters)
+    idx = len(diameter_list)-lenDiam+3
+
+    dNdlogDp = df.iloc[:,idx:-1]
+    dNs = dNdlogDp*(dlogDp)
+    ntotCalc = dNs.sum(axis=1)    
+
+    df_ntotCalc = df.copy(deep = True)
+    
+    # Add column containing the calulated N_tot in dataframe
+    df_ntotCalc['NtotCalc'] = ntotCalc
+    return df_ntotCalc
     
 def remove_cols_with_same_value(df):    
     for col in df.columns:
