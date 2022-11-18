@@ -9,7 +9,10 @@ import cmocean
 from matplotlib import cm
 import warnings
 import scipy as sc
-
+# For K-means clustering
+from sklearn import metrics
+from sklearn.metrics.pairwise import pairwise_distances
+from sklearn.cluster import KMeans
 
 
 bin_col_names_2010_2020 = ['5.0118723e-09', '5.6234133e-09', '6.3095734e-09',
@@ -194,6 +197,113 @@ def compareIntegration(N_calc,N_meas):
     
     return 
 
+def create_normalised_df(dataFrame, start_size_bin_col='5.012', end_size_bin_col='707.946'):
+    '''Normalize the size distributions.'''
+    df = dataFrame.copy()
+    
+    # Make column headings for the normalized size distributions
+    n_vars = ['norm'+str(df.loc[:, start_size_bin_col:end_size_bin_col].columns.tolist()[i]) for i in range(0, df.loc[:, start_size_bin_col:end_size_bin_col].shape[1])]
+
+    
+    # Divide by maximum to normaize 
+    df[n_vars] = df.loc[:, start_size_bin_col:end_size_bin_col].div(df.loc[:, start_size_bin_col:end_size_bin_col].max(axis=1), axis=0)
+    
+    df = df.loc[df.loc[:,start_size_bin_col:end_size_bin_col].dropna().index]
+    
+    Datetime_index = df.index    
+    df.reset_index(drop=True, inplace=True)
+    
+    start_size_normbin_col = 'norm'+str(start_size_bin_col)
+    end_size_normbin_col = 'norm'+str(end_size_bin_col)    
+    
+    df_norm = df.loc[:, start_size_normbin_col:end_size_normbin_col].copy()
+    df_norm.index = Datetime_index
+    df.index = Datetime_index
+    
+    return df, df_norm
+    
+def perform_clustering(df_normarlised, no_clusters):
+    kmeans = KMeans(init="k-means++", n_clusters=no_clusters).fit(df_normarlised) #Compute k-means clustering.
+    labels = kmeans.labels_
+    centres = kmeans.cluster_centers_
+
+    # Predict the closest cluster each sample in X belongs to and add a column in the dataframe called clusters
+    df_normarlised['clusters'] = kmeans.predict(df_normarlised) 
+    
+    df_normalized_copy = df_normarlised.copy()
+    #print(df_normalized_copy['clusters'].unique())    
+    
+    # Start cluster numbering from 1
+    df_normalized_copy['clusters'] = df_normalized_copy['clusters']+1
+    #print(df_normalized_copy['clusters'].unique())
+    
+    dict_max_columns_unordered, dict_max_columns = produce_dicts_for_sorting(df_normalized_copy)
+    final_mapping = connect_dicts(dict_max_columns_unordered, dict_max_columns)
+    
+    #print(df_normalized_copy['clusters'].unique())
+    #print('Final mapping =',final_mapping)
+    
+    df_normalized_copy['clusters'] = df_normalized_copy['clusters'].map(final_mapping)
+    
+    #print(df_normalized_copy['clusters'].unique())
+    
+    
+    # Compute the siloutte average score and siloutte score for each cluster
+    #---------------------------------------------
+#     # The silhouette_score gives the average value for all the samples.
+#     # This gives a perspective into the density and separation of the formed
+#     # clusters
+#     For dataframe: 
+# https://stackoverflow.com/questions/52665061/the-right-data-format-for-silhouette-score-with-pandas/52671702
+#     X is d_mobs?
+#     What typ is cluster label? = labels
+
+#     silhouette_avg = silhouette_score(X, cluster_labels)
+#     print(
+#         "For no_clusters =",
+#         no_clusters,
+#         "The average silhouette_score is :",
+#         silhouette_avg,
+#     )
+
+#     # Compute the silhouette scores for each sample
+#     sample_silhouette_values = silhouette_samples(X, cluster_labels)
+    #---------------------------------------------
+    return df_normalized_copy
+
+def produce_dicts_for_sorting(df):
+    df_ = df.groupby('clusters').mean()
+    
+    #print(np.unique(df['clusters'].values,return_counts=True))
+    
+    # Applying the anonymous lambda function
+    max_col_index = df_.apply(lambda x: x.argmax(), axis=1)
+    
+    # Find the column which contains the max of the clusters
+    dict_max_columns_unordered = dict(zip(df_.index, max_col_index))
+    
+    #print('dict_max_columns_unordered',dict_max_columns_unordered)
+    
+    # Sort so that cluster 1 has peak for the smallest diameter and so on
+    max_col_index_sorted = sorted(max_col_index.values)
+    dict_max_columns = dict(zip(df_.index, max_col_index_sorted))
+   
+    #print('dict_max_columns',dict_max_columns)
+    
+    #print('dict_max_columns:',dict_max_columns)
+    return dict_max_columns_unordered, dict_max_columns
+    
+def connect_dicts(dict_max_columns_unordered, dict_max_columns):
+    final_mapping = {}
+    
+    for k,v in dict_max_columns_unordered.items():
+        ordered_v = dict_max_columns[k]
+        ordered_v_list = list(dict_max_columns.values())
+        new_key = ordered_v_list.index(v)+1    
+        final_mapping[k] = new_key
+    #print("the mapping from clustering to ordered clusters (by mode): "+str(final_mapping))
+    
+    return final_mapping
     
 def remove_cols_with_same_value(df):    
     for col in df.columns:
@@ -201,6 +311,18 @@ def remove_cols_with_same_value(df):
             if number_uniques_in_col == 1:
                 df = df.drop(columns = [col])      
     return df
+
+def checkUniqueModeDiam(df_norm_clustered,n_clusters):
+    '''Check if number of n_clusters = the resulting number of clusters'''   
+    assignedClusters = len(np.unique(df_norm_clustered['clusters'].values))
+    if assignedClusters != n_clusters:
+        print('Some clusters peak for the same diameter when number of clusters = ',
+              n_clusters,'. Consider choosing other number of clusters.')
+    if assignedClusters == n_clusters:
+        print('OK! Clusters peak for different diameter when number of clusters = ',
+              n_clusters)
+    
+    return
     
 def resample_dfs(dict_years_to_df, name):
     df = dict_years_to_df[name]    
