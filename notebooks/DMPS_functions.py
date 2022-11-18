@@ -8,6 +8,7 @@ import matplotlib as mpl
 import cmocean
 from matplotlib import cm
 import warnings
+import scipy as sc
 
 
 
@@ -67,7 +68,7 @@ def load_and_append_DMPS(inpath, name_in_file):
     
 def get_bins(bin_col_list):
     '''A function that takes in a list of non-rounded bin midpoint diameters as strings, \
-    and rounds the values. A list of mid point diameteters with fewer decimals is resturned.'''
+    and rounds the values. A list of mid point diameteters with fewer decimals is returned.'''
     
     # Turn string items in list to floats and round to 3 decimals
     bin_col_list_floats = [float(i)*10**9 for i in bin_col_list]
@@ -120,8 +121,10 @@ def getFloatDiameterListAndArray():
     
     return diameterList, diameters 
 
-def calcNtot(diameters, df):
-    '''Integrate the log-normal ditribution for given diameters in dataframe df.'''
+def calcNtot(diameters, df, GMDs):
+    '''Integrate the log-normal ditribution for given diameters in dataframe df. \
+    GMS´Ds is the list of all diameters as strings'''
+    
     # Create array to store upper bin boudaries
     upperBoundaries = np.empty(0)
     diameter_list = list(diameters)
@@ -150,9 +153,11 @@ def calcNtot(diameters, df):
     # Calculate the particle concentration in each bin (dN) by multiplying dNdlogD with dlogD
 
     lenDiam = len(diameters)
-    idx = len(diameter_list)-lenDiam+3
-
+    #idx = len(diameter_list)-lenDiam+3
+    idx = len(GMDs)-lenDiam+3
+    
     dNdlogDp = df.iloc[:,idx:-1]
+    
     dNs = dNdlogDp*(dlogDp)
     ntotCalc = dNs.sum(axis=1)    
 
@@ -161,6 +166,34 @@ def calcNtot(diameters, df):
     # Add column containing the calulated N_tot in dataframe
     df_ntotCalc['NtotCalc'] = ntotCalc
     return df_ntotCalc
+
+def compareIntegration(N_calc,N_meas):
+    '''Make sure that calculated and measured total \
+    particle number concentrations agrees, i.e. that the\
+    function calcNtot works.'''
+    
+    varx = N_calc.copy()
+    vary = N_meas.copy()
+    
+    mask = ~np.isnan(varx) & ~np.isnan(vary)
+    res = sc.stats.linregress(varx[mask], vary[mask])
+
+    print(f"R-squared: {res.rvalue**2:.6f}")
+
+    plt.plot(varx,
+             vary,
+             'o', label='original data')
+    plt.plot(varx,
+             res.intercept + res.slope*varx,
+             'r-', label='fitted line')
+    plt.legend()  
+    plt.ylabel('Measured $N_{tot}$ [#/$cm^3]$')
+    plt.xlabel('Calculated $N_{tot}$ [#/$cm^3]$')
+    print('Intercept:',res.intercept)
+    print('Slope:',res.slope)
+    
+    return 
+
     
 def remove_cols_with_same_value(df):    
     for col in df.columns:
