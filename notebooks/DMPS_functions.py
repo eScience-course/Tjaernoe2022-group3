@@ -943,3 +943,61 @@ def plotScatter(df_norm_period, clusters):
     
 
     return
+
+def DFAnnualCount(df_norm_all,clusters):
+    '''Makes a dataframe with the normalised yearly count for each cluster'''
+    
+    df_norm_all_test = df_norm_all.copy(deep=True)
+    df_norm_all_test['year']  = df_norm_all_test.index.year
+    #print(df_norm_all_test.head())
+    
+    years = df_norm_all_test['year'].unique() 
+    
+    # Make a df with sum normalized count per year and cluster
+    year_list = []
+    year_count_cluster = []  
+    
+    for year in years:  
+        
+        df_year_sliced = df_norm_all_test[df_norm_all_test['year'] == year]
+        #print(df_year_sliced.head())
+        
+        df_tmp = df_year_sliced.copy(deep = True)
+        
+        # Delete column years
+        del df_tmp['year']
+        #print(df_tmp.head()) 
+        
+        # Compute the sum columnwise, you get a series, s
+        # With the sum as and array with one item per cluster 
+        s_sum = df_tmp.sum()
+        
+        year_list.append(year)
+        year_count_cluster.append(s_sum.values)
+        #print(year_count_cluster) 
+    
+     # Make dataframe from lists with columns as clusters and years as rows
+    # year_count_cluster is a list of np arrays with length year. 
+    # Each np.array contains five elements, one for each cluster 
+    
+    lists = year_count_cluster
+    
+    # Make lists into a dataframe
+    df = pd.concat([pd.Series(x) for x in lists], axis=1)
+    df = df.T
+    
+    # Rename columns to cluster IDs
+    
+    # Turn all cluster id:s to string items
+    clusterIDs_str= [str(i) for i in clusters]
+    
+    #Rename columns
+    df.columns = clusterIDs_str
+       
+    # Rename indicies to years
+    years_str= [str(i) for i in years]
+    df.index = years_str
+        
+    df_year = df.copy(deep = True)
+    
+    return df_year
