@@ -227,26 +227,28 @@ def create_normalised_df(dataFrame, start_size_bin_col='5.012', end_size_bin_col
     
 def perform_clustering(df_normarlised, no_clusters):
     ''' K-means'''
-    kmeans = KMeans(init="k-means++", n_clusters=no_clusters,random_state = 100).fit(df_normarlised) #Compute k-means clustering.
-    # Get inertia
-    #  = Sum of squared distances of samples to their closest cluster center, weighted by the sample weights if provided.
-    # Something weighting for sample size is not considered here, see inertia attribute sk.learn.Kmeans
-    inertia = kmeans.inertia_
-    #print('Intertia =', inertia)
-    # Get labels of which cluster each sample belongs to. 
+    kmeans = KMeans(init="k-means++", n_clusters=no_clusters).fit(df_normarlised) #Compute k-means clustering.
     labels = kmeans.labels_
-    
-    # Compute silhouette average score
-    silhouette_avg = skm.silhouette_score(df_normarlised, labels)
-    #print('silhouette score', silhouette_avg)
+    centres = kmeans.cluster_centers_
+
     # Predict the closest cluster each sample in X belongs to and add a column in the dataframe called clusters
     df_normarlised['clusters'] = kmeans.predict(df_normarlised) 
     
-
+    # #-----Test
+    # x = df_normarlised.copy()
+    # x = df_normarlised.drop('clusters', inplace=True, axis=1)
+    # silhouette_avg = skm.silhouette_score(x.values, labels)
+    
+    # clusters = np.unique(df_normarlised['clusters'].values)
+    # print("For n_clusters =", no_clusters,'and unique no of clusters:',clusters,
+    # "The average silhouette_score is :", silhouette_avg)
+    # https://medium.com/@haidarlina4/k-means-clustering-with-scikit-learn-70c805230646
+    # #---------------
+    
     df_normalized_copy = df_normarlised.copy()
     #print(df_normalized_copy['clusters'].unique())    
     
-    # Start cluster numbering from 1 and add column with assigned cluster
+    # Start cluster numbering from 1
     df_normalized_copy['clusters'] = df_normalized_copy['clusters']+1
     #print(df_normalized_copy['clusters'].unique())
     
@@ -260,66 +262,7 @@ def perform_clustering(df_normarlised, no_clusters):
     
     #print(df_normalized_copy['clusters'].unique())
 
-    return silhouette_avg,inertia, df_normalized_copy
-    
-def optimizeClusters(df_hourly_norm_dropped):
-    '''Compute the inertia (elbow method) and the average silouette score
-    to choose optimal number of clusters.'''
-
-    test_n_of_cluster = [2,3,4,5,6,7,8,9,10,11,12,13]
-    av_sil_score_list = []
-    inertia_list = []
-
-       
-    for n_clusters in test_n_of_cluster:
-        
-        df = df_hourly_norm_dropped.copy()
-        #Compute the average silhouette score, inertia and cluster data
-        av_sil_score, inertia, df_norm_clustered = perform_clustering(df, n_clusters)
-        
-        # Define the unique number of size distribution clusters in the sence that peak diameter is different.
-        clusters = np.unique(df_norm_clustered['clusters'].values)
-
-        # Add average siloutte scores to list for plotting later
-        av_sil_score_list.append(av_sil_score)
-
-        # Add inertia to intertia list
-        inertia_list.append(inertia)
-        
-        # Check that the number of clusters resulting from the clustering procedure is equal to the variable ``n_clusters``, 
-        # i.e. that the peak diameters of the clustered size distributions are unique. 
-        #fu.checkUniqueModeDiam(df_norm_clustered,n_clusters)
-        
-    #Plot the inertia and average silhouette score
-    # create figure and axis objects with subplots()
-    fig,ax = plt.subplots()
-    # make a plot of interia
-    ax.plot(test_n_of_cluster,
-            inertia_list,
-            color="red", 
-            marker="o",
-            label = 'Inertia')
-    # set x-axis label
-    ax.set_xlabel("Number of clusters", fontsize = 16)
-    # set y-axis label
-    ax.set_ylabel("Inertia",
-                  color="red",
-                  fontsize=16)
-
-    # Add second y-axis for average Siloutte score
-    # twin object for two different y-axis on the sample plot
-    ax2=ax.twinx()
-    # make a plot with different y-axis using second axis object
-    ax2.plot(test_n_of_cluster,
-             av_sil_score_list,
-             color="blue",
-             marker="x",
-             label = 'Average Siloutte Score')
-    ax2.set_ylabel("Average Silhoutette Score",color="blue",fontsize=16)
-    
-    plt.show()     
-        
-    return
+    return df_normalized_copy
 
 def computeAvergeSilScoreAndDunnIndex(df_norm_clustered_1h_mean,clusters):
     df = df_norm_clustered_1h_mean.copy()
@@ -413,28 +356,21 @@ def plotClustersNormalized(df_norm_clustered_1h_mean, diameters,
                           df_norm_clustered_1h_mean_median):
     '''Plot the reults from the cluster analysis, median and mean + one std.'''
     fig, ax = plt.subplots(figsize=(10,4))
-    
-    
+
     # Defining the number of clusters unique in the sence that peak diameter is different
     clusters = np.unique(df_norm_clustered_1h_mean['clusters'].values)
-    
-    # Define colormap
-    n = len(clusters)
-    colors = cm.Set2(np.linspace(0,1,n))
 
     for i in range(len(clusters)):
         cluster = clusters[i]
         ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_mean.iloc[i,:].values,
-                '-', label='cluster: '+str(cluster),
-                color=colors[i])
+                '-', label='cluster: '+str(cluster))
         ax.fill_between(diameters[1:-2]*10**9, 
                         df_norm_clustered_1h_mean_mean.iloc[i,:].values + df_norm_clustered_1h_std.iloc[i,:].values,                    
-                        df_norm_clustered_1h_mean_mean.iloc[i,:].values - df_norm_clustered_1h_std.iloc[i,:].values,
-                        alpha=0.2,color=colors[i])
+                        df_norm_clustered_1h_mean_mean.iloc[i,:].values - df_norm_clustered_1h_std.iloc[i,:].values, alpha=0.2)
 
 
         # Plot the median to see similarity
-        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values, ':',color=colors[i])
+        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values, ':')
         #ax.set_xticks(bin_cols[::5])
         ax.set_xscale('log')
         ax.set_ylim(0,1.1)
@@ -446,7 +382,7 @@ def plotClustersNormalized(df_norm_clustered_1h_mean, diameters,
     plt.legend(frameon=False,bbox_to_anchor=(.9, 0.1))    
     plt.xlabel('Dp [nm]')
     plt.title('1h mean clusters (mean+ 1std)')
-    plt.ylabel('Normalised particle concentration \n [relative]')
+    plt.ylabel('Normalised concentration')
     plt.show()
     return
 
@@ -481,9 +417,9 @@ def makeTrendPlotsMedian(dfMedian, dfUpperQ, dfLowerQ, UQ, LQ, xL, yL, tL):
     axs.set_xlabel(xL)
     axs.set_ylabel(yL)
     axs.set_title(tL) 
-    return fig, axs
+    return #fig, axs
 
-def makeTrendPlotsMedian2(dfMedian, dfUpperQ, dfLowerQ, UQ, LQ, xL, yL):
+def makeTrendPlotsMedian2(dfMedian, dfUpperQ, dfLowerQ, UQ, LQ, xL, yL, tL):
     fig, axs = plt.subplots(1, figsize=(8, 5))
     axs.plot(dfMedian.index, 
              dfMedian.values,
@@ -495,68 +431,10 @@ def makeTrendPlotsMedian2(dfMedian, dfUpperQ, dfLowerQ, UQ, LQ, xL, yL):
     axs.legend(frameon=False)
     axs.set_xlabel(xL)
     axs.set_ylabel(yL)
+    axs.set_title(tL) 
     return fig, axs
 
-def groupDFs(df_norm_clustered_1h_mean,cluster_ID):
-    '''Compute the annual, monthly and month-yearly occurences and return dataframes.'''
-    # All values are the same row wise (feature of using group-by count)
-    
-    # Create a temporary copy of cluster-assigned data (normalized)
-    df_norm_clustered_1h_mean_copy = df_norm_clustered_1h_mean.copy()
-    
-    # Define NPF clusters
-    clusterID = cluster_ID
 
-    # Choosing only data assigne to cluster ID = cluster
-    df_cluster_sliced = df_norm_clustered_1h_mean_copy[df_norm_clustered_1h_mean_copy['clusters'] == clusterID]
-    df_cluster_mc     = df_cluster_sliced.copy(deep = True)
-    df_cluster_my     = df_cluster_sliced.copy(deep = True)
-    df_cluster_y      = df_cluster_sliced.copy(deep = True)
-    
-    # Fixing the dates so month-year can be extracted
-    dt_array = df_cluster_my.index.values # Datetime array
-    df_dummy = df_cluster_sliced.copy(deep = True)
-    df_dummy['dtObjects'] = dt_array
-    df_dummy['month_year'] = pd.to_datetime(df_dummy['dtObjects']).dt.to_period('M')
-    df_dummy = df_dummy.drop('dtObjects', axis=1)
-    
-    
-        
-    # Create a cloumn called month and year in dataframe
-    df_cluster_mc.loc[:,'month']      =  df_cluster_mc.index.month
-    df_cluster_my['month_year']       = df_dummy['month_year'].values
-    df_cluster_y.loc[:,'year']        =  df_cluster_y.index.year
-    
-    # Compute month count (irrespective of year)
-    df_cluster_count_mc = df_cluster_mc.groupby('month').count()
-    
-    # Compute the month-year count
-    df_cluster_count_my         = df_cluster_my.groupby('month_year').count()
-    
-    # Comoute the year total count
-    df_cluster_count_y          = df_cluster_y.groupby('year').count()     
-
-    df_cluster_count_mc_copy    = df_cluster_count_mc.copy()
-    df_cluster_count_my_copy    = df_cluster_count_my.copy()
-    df_cluster_count_y_copy     = df_cluster_count_y.copy()
-    
-        
-    return df_cluster_count_mc_copy, df_cluster_count_my_copy, df_cluster_count_y_copy
-
-def calcNPFOccurence(df_mc,df_my,df_y):
-    '''Compute the monthly occurence from gropued dataframes and return list and datetimeobjects'''
-    
-    # We can thake the vlues from any column as input are grouped
-    mcOcc    = df_mc.iloc[:,0].values
-    mcOcc_dt = df_mc.index.values
-    
-    myOcc    = df_my.iloc[:,0].values
-    myOcc_dt = df_my.index.values
-    
-    yOcc     = df_y.iloc[:,0].values
-    yOcc_dt  = df_y.index.values  
-       
-    return mcOcc, mcOcc_dt, myOcc, myOcc_dt, yOcc, yOcc_dt
  
 def calcFriedmanDiaconisNo(x):
     '''Calculate the optimal number of bins in histogram
@@ -652,294 +530,3 @@ def creat_distribution_plots(xrs, season, accumulation_min=75):
     plt.title('')
     plt.show()
     return fig
-    
-    
-def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,bin_cols_,threshold,diameters,diameters_as_strings):
-    '''Plot different NPF proxies'''
-    
-    df_tmp = df_hourly_2010_2020_mean.copy(deep = True)
-    
-    bin_cols = bin_cols_.copy()
-    
-    # Create Nx/Ntot for 1 h mean data----------------------------------------------------------
-    bin_cols_LTnm = [x for x in bin_cols if x < threshold]
-
-    df_tmp = calcNtot(diameters[:len(bin_cols_LTnm)+1], df_tmp,diameters_as_strings)
-    df_tmp_nxntot = df_tmp.copy(deep = True)
-
-    df_tmp_nxntot['NxNtot'] = df_tmp_nxntot['NtotCalc']/df_tmp_nxntot['Ntot']
-
-    # Drop NaN:s
-    df_tmp_nxntot = df_tmp_nxntot.dropna(subset =['NxNtot'])
-
-    # Look at annual cycle for NxNtot
-    df_tmp_nxntot_mean = df_tmp_nxntot['NxNtot'].groupby(df_tmp_nxntot.index.month).mean()
-    df_tmp_nxntot_std = df_tmp_nxntot['NxNtot'].groupby(df_tmp_nxntot.index.month).std()
-
-    df_tmp_nxntot_median = df_tmp_nxntot['NxNtot'].groupby(df_tmp_nxntot.index.month).median()
-    df_tmp_nxntot_10q = df_tmp_nxntot['NxNtot'].groupby(df_tmp_nxntot.index.month).quantile(0.1)
-    df_tmp_nxntot_90q = df_tmp_nxntot['NxNtot'].groupby(df_tmp_nxntot.index.month).quantile(0.9)
-    
-    # Create absolute diff Uf cpc - cpc----------------------------------------------------------
-
-    df_tmp['abs_diff'] = np.absolute(df_tmp['UFCPC']-df_tmp['CPC3010'])
-
-    df_tmp_adiff = df_tmp.copy(deep = True)
-
-    # Drop NaN's
-    df_tmp_adiff = df_tmp_adiff.dropna(subset =['abs_diff'])
-
-    df_1h_annual_cycle_adiff_mean = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).mean()
-    df_1h_annual_cycle_adiff_std = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).std()
-
-    df_1h_annual_cycle_adiff_median = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).median()
-    df_1h_annual_cycle_adiff_10q = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).quantile(0.1)
-    df_1h_annual_cycle_adiff_90q = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).quantile(0.9)
-    #-------------------------------------------------------------------------------------------------------
-    
-    
-    # Plot
-    fig = plt.figure(figsize=(8, 8))
-    
-    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
-    
-    ax = plt.subplot(2, 1, 1)
-    
-    # Plot abs diff median
-    ax.plot(df_1h_annual_cycle_adiff_median.index, 
-               df_1h_annual_cycle_adiff_median.values,
-               label = 'Median $|CPC_{UF}-CPC|$',color ='r')
-    ax.fill_between(df_1h_annual_cycle_adiff_median.index,
-                df_1h_annual_cycle_adiff_90q,
-                df_1h_annual_cycle_adiff_10q,
-                color ='r',alpha=0.2,label= str(10)+'-'+str(90)+' percentiles')
-    
-    # Plot abs diff mean
-    ax.plot(df_1h_annual_cycle_adiff_mean.index, 
-               df_1h_annual_cycle_adiff_mean.values,
-               label = 'Mean $|CPC_{UF}-CPC|$',color ='b',linestyle = ':')
-    
-    # It is unreasonable for std to be less than zero (plotting artefact)
-    neg_std = df_1h_annual_cycle_adiff_mean.values - df_1h_annual_cycle_adiff_std
-    neg_std[neg_std < 0] = 0
-    ax.fill_between(df_1h_annual_cycle_adiff_median.index,
-                df_1h_annual_cycle_adiff_mean.values + df_1h_annual_cycle_adiff_std.values,
-                neg_std,
-                color ='b',alpha=0.2,label = '+/-1$\sigma$') 
-    plt.legend(frameon=False,bbox_to_anchor=(1.5, 1))     
-    # Plot Nx/Ntot
-    axt = ax.twinx()
-    axt.plot(df_tmp_nxntot_median.index, 
-            df_tmp_nxntot_median.values,
-            color ='k',linestyle = '--')
-    axt.fill_between(df_tmp_nxntot_median.index,
-                df_tmp_nxntot_90q,
-                df_tmp_nxntot_10q,
-                color ='k',alpha=0.1,label= str(10)+'-'+str(90)+' percentiles')
-    axt.set_ylabel('$N_x/N_{tot}$ [a.u.]')
-     
-    
-   
-    plt.xticks(np.arange(1, 13, 1), month_names)
-    ax.set_ylabel('$|CPC_{UF}-CPC|$ [#/cm3]')
-    plt.xticks(rotation = 45)
-    #----------------------------------------------------------------------------------------------
-    # Next subplot for clusters
-    ax2 = plt.subplot(2, 1, 2)
-    
-
-    
-    # Define colormap
-    n = len(clusterIDs)
-    colors = cm.Set2(np.linspace(0,1,n))
-    i = 0
-    for clusterID in clusterIDs:
-        
-        # Get clusters annual cycle 
-        # For one cluster:
-        dfmc,dfmy,dfy = groupDFs(df_norm_clustered_1h_mean,clusterID)
-        mcOcc, mcOcc_dt, myOcc, myOcc_dt, yOcc, yOcc_dt = calcNPFOccurence(dfmc,dfmy,dfy)
-        
-        if clusterID < 3:
-            ax2.plot(mcOcc_dt,mcOcc,'-o',label='cluster: '+str(clusterID),
-            color = colors[i],linewidth=3,markersize = 8)
-        
-        if clusterID > 2:
-            ax2.plot(mcOcc_dt,mcOcc,'-x',label='cluster: '+str(clusterID),
-            alpha = 0.5,color = colors[i])
-        i = i+1
-    ax2.set_ylabel('Occurence [hours]')
-    plt.legend(frameon=False,bbox_to_anchor=(1.3, 1))    
-    plt.xticks(np.arange(1, 13, 1), month_names)
-    plt.xticks(rotation = 45)
-    plt.show()
-    
-    return
-
-
-def makeDFforStackedPlot(df_norm_clustered_1h_mean, clusters):
-    '''Make DF for the stacked plot'''
-
-    df_norm_clustered_1h_mean_copy = df_norm_clustered_1h_mean.copy(deep = True)
-
-    df_clusters_month = pd.DataFrame(columns=clusters)
-    #print(df_clusters_month)
-
-    for cluster in clusters:
-        df_cluster = df_norm_clustered_1h_mean_copy[df_norm_clustered_1h_mean_copy['clusters'] == cluster]
-        df_cluster = df_cluster.copy() 
-
-        df_cluster.loc[:,'month'] =  df_cluster.index.month
-
-        # Calculate the occurence of cluster "cluster" per month
-        df_cluster_count = df_cluster.groupby('month').count()
-        #print('df_cluster_count')
-        monthly_occurance = df_cluster_count.iloc[:,0].values
-        #print(monthly_occurance)
-        df_clusters_month[cluster] = monthly_occurance
-
-    df_clusters_month['total_freq'] = df_clusters_month.sum(axis=1)
-    # Normalizing 
-    df_clusters_month_ = df_clusters_month.div(df_clusters_month['total_freq'], axis=0) 
-
-    df_clusters_month  = df_clusters_month_.copy(deep=True)
-
-    return df_clusters_month, df_cluster
-
-def makeStackedPlot(df_norm_clustered_1h_mean, clusters):
-    '''Make stacked plot'''
-    
-    df_clusters_month, df_cluster = makeDFforStackedPlot(df_norm_clustered_1h_mean,clusters)
-    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
-    df_clusters_month[clusters].plot(kind='bar', 
-                    stacked=True, 
-                    colormap='Set2',
-                    width = 0.9,            
-                    figsize=(6, 4))
-
-    plt.ylabel("Normalized occurence")
-    plt.ylim(0,1)
-    plt.legend(title = 'Cluster:',frameon=False,bbox_to_anchor=(1, 1))
-    plt.xticks(np.arange(0, 12, 1), month_names,)
-    plt.xticks(rotation = 45)
-    plt.show()
-    return 
-    
-def prepareDFforTrendPlot(df_norm_clustered_1h_mean,clusters):
-    '''Prepare datafram for trend analysis'''
-    
-    df_trend = df_norm_clustered_1h_mean.copy(deep=True)
-    dt_array = df_trend.index.values
-    df_trend['dtObjects'] = dt_array
-    df_trend['month_year'] = pd.to_datetime(df_trend['dtObjects']).dt.to_period('M')
-    df_trend['month'] = df_trend['dtObjects'].dt.month
-    df_trend['year'] = df_trend['dtObjects'].dt.year
-
-    # Create a dataframe from dictionaries as sometimes ther might not be any cluster 3 for example in some month --> 
-    # Problem that when we group by month-year we don't get the 
-
-    list_of_dicts = []
-    for cluster in clusters:
-        df_cluster = df_trend[df_trend['clusters'] == cluster]
-        df_cluster = df_cluster.copy()    
-        #print(cluster)   
-        # Calculate the occurence of cluster "cluster" per month
-        df_cluster_count  = df_cluster.groupby('month_year').count()    
-        monthly_occurance = df_cluster_count.iloc[:,0].values
-
-
-        dict_cluster = dict(zip(df_cluster_count.index, monthly_occurance))
-
-        #print(dict_cluster)
-        list_of_dicts.append(dict_cluster)
-        #print(list_of_dicts)
-
-    # ds is a dataframe whcih contains the rows = cluster no, and rows equal to month-year. 
-    df_clusters_seqMonth = pd.DataFrame(list_of_dicts)
-    
-    str(df_clusters_seqMonth.columns.values[0])
-    datetimes = [pd.to_datetime(str(x)) for x in list(df_clusters_seqMonth.columns.values)]
-       
-    # The days that have zero count get a Nan values that should be replaced by 0
-    df_clusters_seqMonth = df_clusters_seqMonth.replace(np.nan, 0)
-    
-    # Add a row with total sum of columns  
-    df_clusters_seqMonth.loc['total'] = df_clusters_seqMonth.sum(axis=0)
-    
-    # Transform the data frame so clusters are columns 
-    df_T = df_clusters_seqMonth.T
-    df_T.index = datetimes
-    df_T['month'] = df_T.index.month
-    
-    # Number the colmns from 1-5 (clusterIDs) instead of 0-4 and name total and month
-    df_T.columns = ['1','2','3','4','5','total', 'month']
-
-    df_clusters_seqMonth_copy = df_clusters_seqMonth.copy(deep=True)
-    df_T_copy = df_T.copy(deep=True)
-    
-    return df_clusters_seqMonth_copy, df_T
-    
-def makeDFforTrend(df_clusters_seqMonth_T,period_list):
-    '''Choose months that you take interest in and a 
-    df which is normalized for the data coverage for plotting is returned'''
-    
-    df_T = df_clusters_seqMonth_T.copy(deep=True)
-    df_T_period = df_T[df_T.month.isin(period_list)] # Choosing the months
-    df_T_period = df_T_period.sort_index()
-    
-    # Normalizing the count for data coverage (numbers are not comparable if this is not done)
-    df_norm_period_ = df_T_period[['1', '2', '3', '4', '5']].div(df_T_period['total'], axis=0)
-    
-    df_norm_period = df_norm_period_.copy(deep = True)
-    
-    return df_norm_period
-    
-    
-def plotScatter(df_norm_period, clusters):
-    
-    n = len(clusters)
-    df_ = df_norm_period.copy(deep=True)
-    df_.loc[:,'month'] =  df_.index.month
-    colors = cm.Set2(np.linspace(0,1,n))
-    
-    # Plot annual scatter plots for all clusters colored by cluster 
-    
-    
-    fig = plt.figure(figsize=(8, 8))
-    i = 1
-    j = 1
-    for cluster, n_ax in zip(clusters, range(0,5)):
-        i
-        ax = plt.subplot(3,2,i)
-        ax.set_title('Cluster ' + str(cluster))
-        # Plot normally
-#         ax.plot(df_norm_period.index,
-#                 df_norm_period[str(cluster)].values,
-#                 'o', color = colors[cluster-1],
-#                 markersize = 4)
-        #Plot with color by month
-        im = ax.scatter(df_norm_period.index,
-                df_norm_period[str(cluster)].values,
-                s = 30,
-                c = df_['month'].values,
-                cmap='hot')
-                
-        i = i + 1
-
-        ax.set_ylim([-0.1,1.2])
-        plt.xticks(rotation = 45)
-          
-    
-    fig.add_subplot(111, frame_on=False)
-    plt.ylabel("Normalized occurence")
-    
-    
-    #Needed to not mess up labels
-    plt.tick_params(labelcolor="none", bottom=False, left=False)
-
-   
-    fig.tight_layout()
-    plt.show()
-    
-
-    return
