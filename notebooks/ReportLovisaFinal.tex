@@ -1,0 +1,1243 @@
+\documentclass[11pt]{article}
+
+    \usepackage[breakable]{tcolorbox}
+    \usepackage{parskip} % Stop auto-indenting (to mimic markdown behaviour)
+    
+
+    % Basic figure setup, for now with no caption control since it's done
+    % automatically by Pandoc (which extracts ![](path) syntax from Markdown).
+    \usepackage{graphicx}
+    % Maintain compatibility with old templates. Remove in nbconvert 6.0
+    \let\Oldincludegraphics\includegraphics
+    % Ensure that by default, figures have no caption (until we provide a
+    % proper Figure object with a Caption API and a way to capture that
+    % in the conversion process - todo).
+    \usepackage{caption}
+    \DeclareCaptionFormat{nocaption}{}
+    \captionsetup{format=nocaption,aboveskip=0pt,belowskip=0pt}
+
+    \usepackage{float}
+    \floatplacement{figure}{H} % forces figures to be placed at the correct location
+    \usepackage{xcolor} % Allow colors to be defined
+    \usepackage{enumerate} % Needed for markdown enumerations to work
+    \usepackage{geometry} % Used to adjust the document margins
+    \usepackage{amsmath} % Equations
+    \usepackage{amssymb} % Equations
+    \usepackage{textcomp} % defines textquotesingle
+    % Hack from http://tex.stackexchange.com/a/47451/13684:
+    \AtBeginDocument{%
+        \def\PYZsq{\textquotesingle}% Upright quotes in Pygmentized code
+    }
+    \usepackage{upquote} % Upright quotes for verbatim code
+    \usepackage{eurosym} % defines \euro
+
+    \usepackage{iftex}
+    \ifPDFTeX
+        \usepackage[T1]{fontenc}
+        \IfFileExists{alphabeta.sty}{
+              \usepackage{alphabeta}
+          }{
+              \usepackage[mathletters]{ucs}
+              \usepackage[utf8x]{inputenc}
+          }
+    \else
+        \usepackage{fontspec}
+        \usepackage{unicode-math}
+    \fi
+
+    \usepackage{fancyvrb} % verbatim replacement that allows latex
+    \usepackage{grffile} % extends the file name processing of package graphics
+                         % to support a larger range
+    \makeatletter % fix for old versions of grffile with XeLaTeX
+    \@ifpackagelater{grffile}{2019/11/01}
+    {
+      % Do nothing on new versions
+    }
+    {
+      \def\Gread@@xetex#1{%
+        \IfFileExists{"\Gin@base".bb}%
+        {\Gread@eps{\Gin@base.bb}}%
+        {\Gread@@xetex@aux#1}%
+      }
+    }
+    \makeatother
+    \usepackage[Export]{adjustbox} % Used to constrain images to a maximum size
+    \adjustboxset{max size={0.9\linewidth}{0.9\paperheight}}
+
+    % The hyperref package gives us a pdf with properly built
+    % internal navigation ('pdf bookmarks' for the table of contents,
+    % internal cross-reference links, web links for URLs, etc.)
+    \usepackage{hyperref}
+    % The default LaTeX title has an obnoxious amount of whitespace. By default,
+    % titling removes some of it. It also provides customization options.
+    \usepackage{titling}
+    \usepackage{longtable} % longtable support required by pandoc >1.10
+    \usepackage{booktabs}  % table support for pandoc > 1.12.2
+    \usepackage{array}     % table support for pandoc >= 2.11.3
+    \usepackage{calc}      % table minipage width calculation for pandoc >= 2.11.1
+    \usepackage[inline]{enumitem} % IRkernel/repr support (it uses the enumerate* environment)
+    \usepackage[normalem]{ulem} % ulem is needed to support strikethroughs (\sout)
+                                % normalem makes italics be italics, not underlines
+    \usepackage{mathrsfs}
+    
+
+    
+    % Colors for the hyperref package
+    \definecolor{urlcolor}{rgb}{0,.145,.698}
+    \definecolor{linkcolor}{rgb}{.71,0.21,0.01}
+    \definecolor{citecolor}{rgb}{.12,.54,.11}
+
+    % ANSI colors
+    \definecolor{ansi-black}{HTML}{3E424D}
+    \definecolor{ansi-black-intense}{HTML}{282C36}
+    \definecolor{ansi-red}{HTML}{E75C58}
+    \definecolor{ansi-red-intense}{HTML}{B22B31}
+    \definecolor{ansi-green}{HTML}{00A250}
+    \definecolor{ansi-green-intense}{HTML}{007427}
+    \definecolor{ansi-yellow}{HTML}{DDB62B}
+    \definecolor{ansi-yellow-intense}{HTML}{B27D12}
+    \definecolor{ansi-blue}{HTML}{208FFB}
+    \definecolor{ansi-blue-intense}{HTML}{0065CA}
+    \definecolor{ansi-magenta}{HTML}{D160C4}
+    \definecolor{ansi-magenta-intense}{HTML}{A03196}
+    \definecolor{ansi-cyan}{HTML}{60C6C8}
+    \definecolor{ansi-cyan-intense}{HTML}{258F8F}
+    \definecolor{ansi-white}{HTML}{C5C1B4}
+    \definecolor{ansi-white-intense}{HTML}{A1A6B2}
+    \definecolor{ansi-default-inverse-fg}{HTML}{FFFFFF}
+    \definecolor{ansi-default-inverse-bg}{HTML}{000000}
+
+    % common color for the border for error outputs.
+    \definecolor{outerrorbackground}{HTML}{FFDFDF}
+
+    % commands and environments needed by pandoc snippets
+    % extracted from the output of `pandoc -s`
+    \providecommand{\tightlist}{%
+      \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+    % Add ',fontsize=\small' for more characters per line
+    \newenvironment{Shaded}{}{}
+    \newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+    \newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+    \newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+    \newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+    \newcommand{\RegionMarkerTok}[1]{{#1}}
+    \newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\NormalTok}[1]{{#1}}
+
+    % Additional commands for more recent versions of Pandoc
+    \newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+    \newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+    \newcommand{\ImportTok}[1]{{#1}}
+    \newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+    \newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+    \newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+    \newcommand{\BuiltInTok}[1]{{#1}}
+    \newcommand{\ExtensionTok}[1]{{#1}}
+    \newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+    \newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+    \newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+
+
+    % Define a nice break command that doesn't care if a line doesn't already
+    % exist.
+    \def\br{\hspace*{\fill} \\* }
+    % Math Jax compatibility definitions
+    \def\gt{>}
+    \def\lt{<}
+    \let\Oldtex\TeX
+    \let\Oldlatex\LaTeX
+    \renewcommand{\TeX}{\textrm{\Oldtex}}
+    \renewcommand{\LaTeX}{\textrm{\Oldlatex}}
+    % Document parameters
+    % Document title
+    \title{ReportLovisaFinal}
+    
+    
+    
+    
+    
+% Pygments definitions
+\makeatletter
+\def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+    \let\PY@ul=\relax \let\PY@tc=\relax%
+    \let\PY@bc=\relax \let\PY@ff=\relax}
+\def\PY@tok#1{\csname PY@tok@#1\endcsname}
+\def\PY@toks#1+{\ifx\relax#1\empty\else%
+    \PY@tok{#1}\expandafter\PY@toks\fi}
+\def\PY@do#1{\PY@bc{\PY@tc{\PY@ul{%
+    \PY@it{\PY@bf{\PY@ff{#1}}}}}}}
+\def\PY#1#2{\PY@reset\PY@toks#1+\relax+\PY@do{#2}}
+
+\@namedef{PY@tok@w}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.73,0.73}{##1}}}
+\@namedef{PY@tok@c}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cp}{\def\PY@tc##1{\textcolor[rgb]{0.61,0.40,0.00}{##1}}}
+\@namedef{PY@tok@k}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kp}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kt}{\def\PY@tc##1{\textcolor[rgb]{0.69,0.00,0.25}{##1}}}
+\@namedef{PY@tok@o}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@ow}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\@namedef{PY@tok@nb}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@nf}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@nc}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@nn}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@ne}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.80,0.25,0.22}{##1}}}
+\@namedef{PY@tok@nv}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@no}{\def\PY@tc##1{\textcolor[rgb]{0.53,0.00,0.00}{##1}}}
+\@namedef{PY@tok@nl}{\def\PY@tc##1{\textcolor[rgb]{0.46,0.46,0.00}{##1}}}
+\@namedef{PY@tok@ni}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.44,0.44,0.44}{##1}}}
+\@namedef{PY@tok@na}{\def\PY@tc##1{\textcolor[rgb]{0.41,0.47,0.13}{##1}}}
+\@namedef{PY@tok@nt}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@nd}{\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\@namedef{PY@tok@s}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sd}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@si}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.64,0.35,0.47}{##1}}}
+\@namedef{PY@tok@se}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.36,0.12}{##1}}}
+\@namedef{PY@tok@sr}{\def\PY@tc##1{\textcolor[rgb]{0.64,0.35,0.47}{##1}}}
+\@namedef{PY@tok@ss}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@sx}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@m}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@gh}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\@namedef{PY@tok@gu}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.50,0.00,0.50}{##1}}}
+\@namedef{PY@tok@gd}{\def\PY@tc##1{\textcolor[rgb]{0.63,0.00,0.00}{##1}}}
+\@namedef{PY@tok@gi}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.52,0.00}{##1}}}
+\@namedef{PY@tok@gr}{\def\PY@tc##1{\textcolor[rgb]{0.89,0.00,0.00}{##1}}}
+\@namedef{PY@tok@ge}{\let\PY@it=\textit}
+\@namedef{PY@tok@gs}{\let\PY@bf=\textbf}
+\@namedef{PY@tok@gp}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\@namedef{PY@tok@go}{\def\PY@tc##1{\textcolor[rgb]{0.44,0.44,0.44}{##1}}}
+\@namedef{PY@tok@gt}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
+\@namedef{PY@tok@err}{\def\PY@bc##1{{\setlength{\fboxsep}{\string -\fboxrule}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}}
+\@namedef{PY@tok@kc}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kd}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kn}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kr}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@bp}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@fm}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@vc}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vg}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vi}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vm}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@sa}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sb}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sc}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@dl}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@s2}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sh}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@s1}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@mb}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mf}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mh}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mi}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@il}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mo}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@ch}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cm}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cpf}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@c1}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cs}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+
+\def\PYZbs{\char`\\}
+\def\PYZus{\char`\_}
+\def\PYZob{\char`\{}
+\def\PYZcb{\char`\}}
+\def\PYZca{\char`\^}
+\def\PYZam{\char`\&}
+\def\PYZlt{\char`\<}
+\def\PYZgt{\char`\>}
+\def\PYZsh{\char`\#}
+\def\PYZpc{\char`\%}
+\def\PYZdl{\char`\$}
+\def\PYZhy{\char`\-}
+\def\PYZsq{\char`\'}
+\def\PYZdq{\char`\"}
+\def\PYZti{\char`\~}
+% for compatibility with earlier versions
+\def\PYZat{@}
+\def\PYZlb{[}
+\def\PYZrb{]}
+\makeatother
+
+
+    % For linebreaks inside Verbatim environment from package fancyvrb.
+    \makeatletter
+        \newbox\Wrappedcontinuationbox
+        \newbox\Wrappedvisiblespacebox
+        \newcommand*\Wrappedvisiblespace {\textcolor{red}{\textvisiblespace}}
+        \newcommand*\Wrappedcontinuationsymbol {\textcolor{red}{\llap{\tiny$\m@th\hookrightarrow$}}}
+        \newcommand*\Wrappedcontinuationindent {3ex }
+        \newcommand*\Wrappedafterbreak {\kern\Wrappedcontinuationindent\copy\Wrappedcontinuationbox}
+        % Take advantage of the already applied Pygments mark-up to insert
+        % potential linebreaks for TeX processing.
+        %        {, <, #, %, $, ' and ": go to next line.
+        %        _, }, ^, &, >, - and ~: stay at end of broken line.
+        % Use of \textquotesingle for straight quote.
+        \newcommand*\Wrappedbreaksatspecials {%
+            \def\PYGZus{\discretionary{\char`\_}{\Wrappedafterbreak}{\char`\_}}%
+            \def\PYGZob{\discretionary{}{\Wrappedafterbreak\char`\{}{\char`\{}}%
+            \def\PYGZcb{\discretionary{\char`\}}{\Wrappedafterbreak}{\char`\}}}%
+            \def\PYGZca{\discretionary{\char`\^}{\Wrappedafterbreak}{\char`\^}}%
+            \def\PYGZam{\discretionary{\char`\&}{\Wrappedafterbreak}{\char`\&}}%
+            \def\PYGZlt{\discretionary{}{\Wrappedafterbreak\char`\<}{\char`\<}}%
+            \def\PYGZgt{\discretionary{\char`\>}{\Wrappedafterbreak}{\char`\>}}%
+            \def\PYGZsh{\discretionary{}{\Wrappedafterbreak\char`\#}{\char`\#}}%
+            \def\PYGZpc{\discretionary{}{\Wrappedafterbreak\char`\%}{\char`\%}}%
+            \def\PYGZdl{\discretionary{}{\Wrappedafterbreak\char`\$}{\char`\$}}%
+            \def\PYGZhy{\discretionary{\char`\-}{\Wrappedafterbreak}{\char`\-}}%
+            \def\PYGZsq{\discretionary{}{\Wrappedafterbreak\textquotesingle}{\textquotesingle}}%
+            \def\PYGZdq{\discretionary{}{\Wrappedafterbreak\char`\"}{\char`\"}}%
+            \def\PYGZti{\discretionary{\char`\~}{\Wrappedafterbreak}{\char`\~}}%
+        }
+        % Some characters . , ; ? ! / are not pygmentized.
+        % This macro makes them "active" and they will insert potential linebreaks
+        \newcommand*\Wrappedbreaksatpunct {%
+            \lccode`\~`\.\lowercase{\def~}{\discretionary{\hbox{\char`\.}}{\Wrappedafterbreak}{\hbox{\char`\.}}}%
+            \lccode`\~`\,\lowercase{\def~}{\discretionary{\hbox{\char`\,}}{\Wrappedafterbreak}{\hbox{\char`\,}}}%
+            \lccode`\~`\;\lowercase{\def~}{\discretionary{\hbox{\char`\;}}{\Wrappedafterbreak}{\hbox{\char`\;}}}%
+            \lccode`\~`\:\lowercase{\def~}{\discretionary{\hbox{\char`\:}}{\Wrappedafterbreak}{\hbox{\char`\:}}}%
+            \lccode`\~`\?\lowercase{\def~}{\discretionary{\hbox{\char`\?}}{\Wrappedafterbreak}{\hbox{\char`\?}}}%
+            \lccode`\~`\!\lowercase{\def~}{\discretionary{\hbox{\char`\!}}{\Wrappedafterbreak}{\hbox{\char`\!}}}%
+            \lccode`\~`\/\lowercase{\def~}{\discretionary{\hbox{\char`\/}}{\Wrappedafterbreak}{\hbox{\char`\/}}}%
+            \catcode`\.\active
+            \catcode`\,\active
+            \catcode`\;\active
+            \catcode`\:\active
+            \catcode`\?\active
+            \catcode`\!\active
+            \catcode`\/\active
+            \lccode`\~`\~
+        }
+    \makeatother
+
+    \let\OriginalVerbatim=\Verbatim
+    \makeatletter
+    \renewcommand{\Verbatim}[1][1]{%
+        %\parskip\z@skip
+        \sbox\Wrappedcontinuationbox {\Wrappedcontinuationsymbol}%
+        \sbox\Wrappedvisiblespacebox {\FV@SetupFont\Wrappedvisiblespace}%
+        \def\FancyVerbFormatLine ##1{\hsize\linewidth
+            \vtop{\raggedright\hyphenpenalty\z@\exhyphenpenalty\z@
+                \doublehyphendemerits\z@\finalhyphendemerits\z@
+                \strut ##1\strut}%
+        }%
+        % If the linebreak is at a space, the latter will be displayed as visible
+        % space at end of first line, and a continuation symbol starts next line.
+        % Stretch/shrink are however usually zero for typewriter font.
+        \def\FV@Space {%
+            \nobreak\hskip\z@ plus\fontdimen3\font minus\fontdimen4\font
+            \discretionary{\copy\Wrappedvisiblespacebox}{\Wrappedafterbreak}
+            {\kern\fontdimen2\font}%
+        }%
+
+        % Allow breaks at special characters using \PYG... macros.
+        \Wrappedbreaksatspecials
+        % Breaks at punctuation characters . , ; ? ! and / need catcode=\active
+        \OriginalVerbatim[#1,codes*=\Wrappedbreaksatpunct]%
+    }
+    \makeatother
+
+    % Exact colors from NB
+    \definecolor{incolor}{HTML}{303F9F}
+    \definecolor{outcolor}{HTML}{D84315}
+    \definecolor{cellborder}{HTML}{CFCFCF}
+    \definecolor{cellbackground}{HTML}{F7F7F7}
+
+    % prompt
+    \makeatletter
+    \newcommand{\boxspacing}{\kern\kvtcb@left@rule\kern\kvtcb@boxsep}
+    \makeatother
+    \newcommand{\prompt}[4]{
+        {\ttfamily\llap{{\color{#2}[#3]:\hspace{3pt}#4}}\vspace{-\baselineskip}}
+    }
+    
+
+    
+    % Prevent overflowing lines due to hard-to-break entities
+    \sloppy
+    % Setup hyperref package
+    \hypersetup{
+      breaklinks=true,  % so long urls are correctly broken across lines
+      colorlinks=true,
+      urlcolor=urlcolor,
+      linkcolor=linkcolor,
+      citecolor=citecolor,
+      }
+    % Slightly bigger margins than the latex defaults
+    
+    \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+    
+    
+
+\begin{document}
+    
+    \maketitle
+    
+    
+
+    
+    \hypertarget{abstract}{%
+\subsection{Abstract}\label{abstract}}
+
+Arctic new particle formation is an import source of cloud condensation
+nuclei which in turn affect cloud properties. Insights into the drivers
+of new particle formation in a changing climate are important, as clouds
+in the Arctic contributes to further warming of an already vulnerable
+environment. Sea ice decline has been observed to be correlated with
+increasing new particle formation at the Zeppelin Observatory, but the
+underlying processes are complex, and the question is whether this hold
+true for more recent years. In this work, DMPS and CPC data from
+Zeppelin between 2010-2020 as well as satellite data on sea ice and
+chlorophyll concentration. The correlation between new particle
+formation and sea ice is investigated and different methods are tested
+to identify a suitable indicator for detection of new particle formation
+in the size distribution data. K-means cluster analysis was chosen to
+best represent the which partitions the data into \(k\) clusters based
+on the shape of the size distribution. The results suggest that there is
+no correlation between the annual new particle formation frequency and
+sea ice concentration in the Greenland and Barents Sea for the years
+2010-2017, which differs from previous observations at Zeppelin between
+2000-2010. Further investigations targeting for example air mass
+trajectory analysis and suitable new particle formation indicators are
+needed to obtain amore complete understanding of the complex interplay
+between new particle formation drivers.
+
+    \hypertarget{acknowledgements}{%
+\subsection{Acknowledgements}\label{acknowledgements}}
+
+First and foremost, I would like to acknowledge the providers of the
+data sets OSI-SAF consortium (sea ice data) and OBS-ESACCI-OC for
+chlorophyll data, and the Norwegian Polar Institute (NPI) for running
+the Zeppelin station and EBAS for managing the database.
+
+I collaborated with Kei Tsuruhara and our supervisor Dominic
+Heslin-Reese. I am very thankful to be part of this team, it has been
+inspiring (and fun!) to work with them. In this report Kei has produced
+the sea ice data (it was not easy to work with that dataset!), Dominic
+provided the DMPS and CPC data as well as some functions to read in and
+do the basic preparation of data. Other than I have received tremendous
+amount of help while learning Python (and data analysis in general) from
+especially Dominic but also from other course instructors. Thanks Paul
+Zieger for enthusiasm and great advices on things to look more into.
+Thanks to Linn Karlsson whose work in a previous version of this course
+happened to include a great function to integrate log-normal
+distributions.
+
+    \hypertarget{introduction}{%
+\subsection{Introduction}\label{introduction}}
+
+The Arctic has experienced a much faster warming than other part of the
+globe. The response to increased temperature in the Arctic environment
+is manyfold and implies drastic changes to of the whole environment and
+ecosystems. Drastic reductions in sea ice cover (Perovich et al., 2018)
+occurs oceans are becoming more productive which implies increased
+emissions new particle formation precursor gases (Galí et al.~2019). New
+particle formation (NPF) play an important role in the Arctic radiation
+budget as the may grow to cloud condensation nuclei's (CCN:s) and
+subsequently activate into cloud droplets. Clouds exert a net warming
+effect in the Arctic, which makes studies of NPF drivers important.
+
+The Arctic is in many ways an extreme environment which is also
+reflected in the annual cycle of airborne particulate matter (Tunved et
+al.~2013). During the dark months, ocean and air circulation patterns
+implies an influx of anthropogenic pollutants, and the aerosol size
+distribution is dominated by accumulation mode particles. In combination
+with the Arctic wintertime meteorological conditions, this leads to the
+formation of a persistent Arctic haze. As the sun gradually returns, the
+circulation and airmass transport patterns changes and the anthropogenic
+pollution inflow is restricted. Formation of low-level clouds during
+summertime leads to removal of accumulation mode particles by wet
+scavenging marks the end of the Arctic Haze period. Consequently, the
+composition, properties, and size distribution of Arctic aerosol
+particle change. The lower aerosol load and increased availability of
+sunlight promotes photochemistry and results in a peak of in aerosol
+particles smaller than 100 nm (Schmale \& Baccarini, 2021).
+
+At the Zeppelin mountain station on Svalbard long-term measurements are
+conducted to monitor the properties of aerosol particles. Long term
+measurements are valuable to monitor changes of the sensitive Arctic
+environment. Data from eleven years of DMPS measurements (2000-2010) at
+the Zeppelin station have been used to present the hypothesis that
+Arctic sea ice reduction leads to increased NPF frequency at Zeppelin
+(Dall'Osto et al.~2017). The question this project makes an attempt to
+answer is weather this is a causal effect, if this hold true for
+subsequent years and if trends in proxies for productivity of oceans
+might be driving NPF as well. Another aim is to partly reproduce the
+Dall'Osto paper for a later time period by applying similar methodology
+with regards to NPF identification in the DMPS data, as well as to
+investigate other possibilities for NPF identification. We will use
+satellite data on sea ice and chlorophyll, and aerosol size distribution
+and number concentration data from Zeppelin.
+
+    \hypertarget{method}{%
+\subsection{Method}\label{method}}
+
+\hypertarget{datsets}{%
+\subsubsection{Datsets}\label{datsets}}
+
+We have used level 2 Differential Mobility Particle Sizer (DMPS) and
+data from two different Condensation particle counters (CPC's) from the
+Arctic Zeppelin mountain station at Svalbard, provided by our supervisor
+Dominic Heslin-Rees, and satellite retrieved sea ice concentration from
+OSI-SAF and satellite chlorophyll observations OBS-ESACCI-OC. The DMPS
+and CPC data encompass the years 2010-2020 with overall high data
+coverage. The data was supplied in 30 min resolution. The satellite data
+was processed Kei and DMPS and CPC data is the focus of this report.
+
+The DMPS measures the particle number size distributions for particles
+smaller than 1000 nm. The DMPS scans over different sizes and measures
+the number concentration (\#/cm\(^3\)) in each size interval, or bin.
+The output is in the form of log normal particle concentration which
+accounts for the difference bin bin width. (CPC's) simply counts
+particles in the sub micrometer range and provides the particle number
+concentration (\#/cm\(^3\)).
+
+    \hypertarget{import-packages}{%
+\subsubsection{Import packages}\label{import-packages}}
+
+And make sure that functions are auto-updated.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{1}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{import} \PY{n+nn}{DMPS\PYZus{}functions} \PY{k}{as} \PY{n+nn}{fu}
+\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+\PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
+\PY{k+kn}{import} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{pyplot} \PY{k}{as} \PY{n+nn}{plt}
+\PY{k+kn}{import} \PY{n+nn}{datetime} 
+\PY{k+kn}{import} \PY{n+nn}{seaborn} \PY{k}{as} \PY{n+nn}{sns}
+\PY{k+kn}{import} \PY{n+nn}{scipy} \PY{k}{as} \PY{n+nn}{sc}
+\PY{k+kn}{import} \PY{n+nn}{glob} 
+\PY{k+kn}{import} \PY{n+nn}{sklearn}\PY{n+nn}{.}\PY{n+nn}{metrics} \PY{k}{as} \PY{n+nn}{skm}
+\PY{k+kn}{from} \PY{n+nn}{sklearn} \PY{k+kn}{import} \PY{n}{metrics}
+\PY{k+kn}{from} \PY{n+nn}{sklearn}\PY{n+nn}{.}\PY{n+nn}{metrics}\PY{n+nn}{.}\PY{n+nn}{pairwise} \PY{k+kn}{import} \PY{n}{pairwise\PYZus{}distances}
+\PY{k+kn}{from} \PY{n+nn}{sklearn}\PY{n+nn}{.}\PY{n+nn}{cluster} \PY{k+kn}{import} \PY{n}{KMeans}
+\PY{k+kn}{import} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{stats} \PY{k}{as} \PY{n+nn}{st}
+\PY{k+kn}{import} \PY{n+nn}{seaborn} \PY{k}{as} \PY{n+nn}{sns}
+\PY{k+kn}{from} \PY{n+nn}{matplotlib} \PY{k+kn}{import} \PY{n}{cm}
+
+\PY{c+c1}{\PYZsh{} Auto\PYZhy{}update the functions. Useful if the functions have been altered. }
+\PY{o}{\PYZpc{}}\PY{n}{load\PYZus{}ext} \PY{n}{autoreload}
+\PY{o}{\PYZpc{}}\PY{n}{autoreload} \PY{l+m+mi}{2}
+
+\PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{font.size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{12}\PY{l+s+s1}{\PYZsq{}}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{2}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Defining the path containg all DMPS data}
+\PY{n}{path} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{C:}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{Users}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{Lovisa}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{Documents}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{Courses II}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{E\PYZus{}science\PYZus{}tools HT22}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{Project}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{DATA\PYZus{}ZEP\PYZus{}2010to2020}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{\PYZsq{}}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{3}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Using glob to import the files in the specified path}
+\PY{n}{fu}\PY{o}{.}\PY{n}{importData}\PY{p}{(}\PY{n}{path}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Loading each year of 30 min resolution DMPS data into a dataframe and
+create a list containing all dataframes. Column headings are added, and
+data flagged as invalid is removed.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{4}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{DFs\PYZus{}DMPS} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{load\PYZus{}and\PYZus{}append\PYZus{}DMPS}\PY{p}{(}\PY{n}{path}\PY{p}{,} 
+                             \PY{n}{name\PYZus{}in\PYZus{}file}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{DMPS}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{concatenate-dmps-data}{%
+\subsubsection{Concatenate DMPS data}\label{concatenate-dmps-data}}
+
+The DMPS data comes in several files and must be concatenated into a
+common dateframe, and unessary columns are dropped.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{5}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df\PYZus{}DMPS} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{concat\PYZus{}df\PYZus{}DMPS}\PY{p}{(}\PY{n}{DFs\PYZus{}DMPS}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Useful variables are defined column headings renamed to ease calling of
+specific columns.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{6}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Get a list with the DMPS bin column names as strings and floats to call column in dataframe and for calculations.}
+\PY{n}{bin\PYZus{}col\PYZus{}list} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{get\PYZus{}bin\PYZus{}column\PYZus{}string\PYZus{}list}\PY{p}{(}\PY{p}{)}
+\PY{n}{bin\PYZus{}cols} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{get\PYZus{}bins}\PY{p}{(}\PY{n}{bin\PYZus{}col\PYZus{}list}\PY{p}{)}
+\PY{n}{bin\PYZus{}cols} \PY{o}{=} \PY{p}{[}\PY{n+nb}{float}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{k}{for} \PY{n}{x} \PY{o+ow}{in} \PY{n}{bin\PYZus{}cols}\PY{p}{]}
+
+\PY{c+c1}{\PYZsh{} Rename the column headings for midpoint diameters to numeric values with less decimals.}
+\PY{n}{df\PYZus{}DMPS} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{renameDpColumns}\PY{p}{(}\PY{n}{df\PYZus{}DMPS}\PY{p}{,} \PY{n}{bin\PYZus{}col\PYZus{}list}\PY{p}{)}
+
+\PY{c+c1}{\PYZsh{} Make a list of all the \PYZdq{}real\PYZdq{} non\PYZhy{}rounded midpoint diameters as a list and as array.}
+\PY{n}{diameterList}\PY{p}{,} \PY{n}{diameters} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{getFloatDiameterListAndArray}\PY{p}{(}\PY{p}{)}
+
+\PY{c+c1}{\PYZsh{} Make a list of diameters as string\PYZhy{}objects}
+\PY{n}{diameters\PYZus{}as\PYZus{}strings} \PY{o}{=} \PY{p}{[}\PY{n+nb}{str}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{k}{for} \PY{n}{x} \PY{o+ow}{in} \PY{n}{diameters}\PY{p}{]}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{resampling-to-hourly-averages}{%
+\subsubsection{Resampling to hourly
+averages}\label{resampling-to-hourly-averages}}
+
+The function \texttt{resample} was used to convert the 30 min DMPS
+particle size distribution data to a dataframe containing the 1 hour
+average. The python function \texttt{resample} fills the gaps in the
+data by adding rows for gap days/months/hours with NaN-values to get a
+continous dataset. Because of this, rows containing only NaN values are
+dropped.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{7}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean}  \PY{o}{=} \PY{n}{df\PYZus{}DMPS}\PY{o}{.}\PY{n}{resample}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{H}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}
+\PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean}  \PY{o}{=} \PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean}\PY{o}{.}\PY{n}{dropna}\PY{p}{(}\PY{n}{how}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{all}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    The first two columns in the dataframe contain data from two different
+CPC:s, i.e.~condensation particle counters which count particles and
+yield the particle concentration in \#/cm\(^3\). The UFCPC (ultrafine
+CPC) has a lower particle diameter threshold at 3 nm in comparision with
+the CPC3010 whose lower threshold is at 10 nm. The third colum Ntot
+contains the total particles number concentration as computed by the
+DMPS. The rest of the columns specify the midpoint size (nm) of the bins
+for which the values indicate the log-normal distribution (\#/cm\(^3\)).
+The last column (not visable indicates flags indicating the validity of
+the data. Unvalid data was removed by \texttt{concat\_df\_DMPS}
+function.
+
+    \hypertarget{identifying-npf-events}{%
+\subsubsection{Identifying NPF events}\label{identifying-npf-events}}
+
+One aims of this report is to conduct a brief investigation of different
+methods to identify NPF events. Some different methods are tested to
+identify the NPF events:
+
+\begin{itemize}
+\tightlist
+\item
+  By calculation of \(\frac{N_{D_p<10nm}}{N_{tot}}\)
+\item
+  By using K-means clustering
+\item
+  By calculating the difference between the UFCPC and the CPC
+\end{itemize}
+
+Below the methods are decribed in more detail.
+
+    \hypertarget{method-1-using-n_d_p-xn_tot}{%
+\paragraph{\texorpdfstring{Method 1: Using
+\(N_{D_P <x}/N_{tot}\)}{Method 1: Using N\_\{D\_P \textless x\}/N\_\{tot\}}}\label{method-1-using-n_d_p-xn_tot}}
+
+The motivation to use the first metod is that in the event of NPF, there
+will by a drastic increase in number concentration of particles in
+smallest size bins, and the ratio of particles in the smaller bins to
+should be elevated. The first method requires that the total number
+concentration \(N_{tot}\) is calculated in a given diameter range. To do
+this, the log-normal distribution which is provided by the DMPS has to
+be integrated. Linn Karlsson (e-Science course participant 2017) should
+be acknowledged for great inspiration to the method used in this work
+(Linn's method invloved the use of dictionaries but here arrays are used
+instead).
+
+The \texttt{calcNtot} calculates the particle concentration by
+integrating in a given bin midpoint diameter interval \texttt{diameters}
+and adds a column in the returned dataframe containg the calculated
+values.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{8}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Calculate the total particle number concentration for the 1 h resolution data}
+\PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean\PYZus{}ntotCalc}  \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{calcNtot}\PY{p}{(}\PY{n}{diameters}\PY{p}{,} \PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean}\PY{p}{,}\PY{n}{diameters\PYZus{}as\PYZus{}strings}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    The result from the integration of the full size distribution is
+compared to Ntot given in the DMPS data, and they appear to be in good
+aggrement (slope of 1 and \(R^2\) close to 1).
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{9}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{varx} \PY{o}{=} \PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean\PYZus{}ntotCalc}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{NtotCalc}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{values}
+\PY{n}{vary} \PY{o}{=} \PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean\PYZus{}ntotCalc}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Ntot}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{values}
+
+\PY{n}{fu}\PY{o}{.}\PY{n}{compareIntegration}\PY{p}{(}\PY{n}{varx}\PY{p}{,}\PY{n}{vary}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+R-squared: 0.999363
+Intercept: 0.0445901316076629
+Slope: 1.0004705430431775
+    \end{Verbatim}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ReportLovisaFinal_files/ReportLovisaFinal_21_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \hypertarget{method-2-k-means-clustering}{%
+\paragraph{Method 2: K-means
+clustering}\label{method-2-k-means-clustering}}
+
+    The second approach to identify NPF events involves K-means clustering
+(using \texttt{sklearn.cluster.Kmeans}) of the long-term DMPS dataset
+which is an unsupervised machine learning algorithm. In short,
+unsupervised machine learning as opposed to supervised, involves data
+without labels and the data is grouped based in similarity of the data.
+This approach was previously deployed by Dall'Osto et al.~(2017) to
+identify NPF events from size distribution data at the Zeppelin, and
+therefore it is interesting try the same approach. Clustering of data
+implies grouping similar objects together based on different features of
+the data. The K-means algorithm means that the data is divided into to a
+user defined number of cluster (\(k\)). The K-means algorithm starts by
+picking k random datapoints and assigns them as centers of the cluster
+(centroids). Then distance of the other data points to the centroids are
+then calculated and they are assigned to the nearest cluster centroid.
+Then the process of assigning new centroids starts over and the data is
+reassigned. This process is then repeated several times until the final
+clusters are established.
+
+Following the approach of Dall'Osto et al.~(2017), we cluster according
+to the shape of the distribution. Prior to applying the K-means
+clustering the size distribution data must therefore be normalized, and
+the optimal numbers of clusters needs to be determined.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{10}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df3}\PY{p}{,} \PY{n}{df\PYZus{}daily\PYZus{}2010\PYZus{}2020\PYZus{}1h\PYZus{}mean\PYZus{}norm} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{create\PYZus{}normalised\PYZus{}df}\PY{p}{(}\PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    For the hourly averaged data some endpoint columns where dropped in
+order for the clustering to work. Apparently the K-means method was very
+sensitive to the (in most cases) low concentrations in the endpoints.
+This might indicate that the clustering method is not too robust.
+Normally particle number concentrations are low in the end bins, and by
+dropping them it is reasonable to assume that the overall size
+distribution shape should be preserved.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{11}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df\PYZus{}hourly\PYZus{}norm\PYZus{}dropped} \PY{o}{=} \PY{n}{df\PYZus{}daily\PYZus{}2010\PYZus{}2020\PYZus{}1h\PYZus{}mean\PYZus{}norm}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+\PY{n}{df\PYZus{}hourly\PYZus{}norm\PYZus{}dropped} \PY{o}{=} \PY{n}{df\PYZus{}hourly\PYZus{}norm\PYZus{}dropped}\PY{o}{.}\PY{n}{drop} \PYZbs{}
+                         \PY{p}{(}\PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{norm5.012}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{norm630.957}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{norm707.946}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{optimizing-the-number-of-clusters}{%
+\subparagraph{Optimizing the number of
+clusters}\label{optimizing-the-number-of-clusters}}
+
+This potentially introduces some doubt whether it actually is NPF events
+that the clustering captures or maybe the cluster analysis is a better
+proxy for seasonal variation in the size distribution, or presence of
+ultrafine particles in general. The optimal cluster number \emph{k} for
+K-means clustering needs to be decided upon. This could be done using
+several methods. Here the inertia method and the average silhouette
+score is used.
+
+The inertia method implies calculating the mean squared distance of each
+clusters to its nearest centroid. As a rule of thumb, a good clustering
+model has a low inertia and low number of clusters. If \emph{k} equals
+the number datapoints, the inertia equals zero, so while choosing the
+optimal \emph{k} there is a tradeoff between inertia and number of
+clusters. To find the optimal \emph{k} the elbow in the inertia vs \(k\)
+is identified, where the increase in \emph{k} implies a slower decrease
+in inertia.
+
+The Silouette score generates a number between -1 and 1. The closer the
+Silouette score is to 1, the better cluster are distinguished from each
+other. A score of 0 implies that clusters are not well distinguished and
+-1 that clusters are wrongly assigned. Here, the average silouette score
+is computed which informs on the average separation of all clusters.
+Ideally the Silouette score is calculated for individual samples as well
+(out of the scope of this work) to optimize the choice of \emph{k}.
+
+Optimization was done for varying \emph{k} between 2 and 13 clusters.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{12}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fu}\PY{o}{.}\PY{n}{optimizeClusters}\PY{p}{(}\PY{n}{df\PYZus{}hourly\PYZus{}norm\PYZus{}dropped}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ReportLovisaFinal_files/ReportLovisaFinal_28_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    From the inertia method it is not straightforward to define the elbow,
+where adding more clusters results in a minor decrease of inertia. It is
+clear that the average silhoutette score of the clusters decrease with
+increasing number of clusters.
+
+The optimal cluster number was here decided to \emph{k} = 5, rather than
+4 as inertia decrease less for each added cluster when \emph{k}
+\textgreater{} 4. Six clusters did not improve the silouette score and
+five clusters is preferred over seven as inertia is higher when \emph{k}
+= 5.
+
+\hypertarget{method-3-utilizing-the-different-cpcs}{%
+\paragraph{Method 3: Utilizing the different
+CPC's}\label{method-3-utilizing-the-different-cpcs}}
+
+The last method to identify the NPF events involves taking advantage of
+the different detection limits of the UFCPC (3 nm) and CPC3010 (10 nm)
+that was provided in the dataset in addition to the DMPS data. Two
+different approaches where tested: taking the absolute difference
+between the instruments and by computing the ratio of measured
+concentrations.
+
+    \hypertarget{results}{%
+\subsection{Results}\label{results}}
+
+\hypertarget{k-means-clustering}{%
+\subsubsection{K-means clustering}\label{k-means-clustering}}
+
+The clustering was performed using \(k\) = 5 clusters.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{13}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Optimal cluster number }
+\PY{n}{n\PYZus{}clusters} \PY{o}{=} \PY{l+m+mi}{5}
+
+\PY{c+c1}{\PYZsh{}Perform K\PYZhy{}means clustering}
+\PY{n}{silhouette\PYZus{}avg\PYZus{}1h}\PY{p}{,} \PY{n}{inertia1h}\PY{p}{,} \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{perform\PYZus{}clustering}\PY{p}{(}\PY{n}{df\PYZus{}hourly\PYZus{}norm\PYZus{}dropped}\PY{p}{,} \PY{n}{n\PYZus{}clusters}\PY{p}{)}
+
+\PY{c+c1}{\PYZsh{} Define the unique number of size distribution clusters in the sence that peak diameter is different.}
+\PY{n}{clusters} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{unique}\PY{p}{(}\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{clusters}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{values}\PY{p}{)}
+
+\PY{c+c1}{\PYZsh{} Check that the number of clusters resulting from the clustering procedure is equal to the variable ``n\PYZus{}clusters``, }
+\PY{c+c1}{\PYZsh{} i.e. that the peak diameters of the clustered size distributions are unique. Print result.}
+\PY{n}{fu}\PY{o}{.}\PY{n}{checkUniqueModeDiam}\PY{p}{(}\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{p}{,}\PY{n}{n\PYZus{}clusters}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+OK! Clusters peak for different diameter when number of clusters =  5
+    \end{Verbatim}
+
+    Each hourly distribution was assigned a cluster ID during the
+clustering. The mean, standard devitation, median, 10- and
+90-percentiles of the clustered data was calulated for each cluster in
+order to visulize the results of the clustering procedure.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{14}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean\PYZus{}median} \PY{o}{=} \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{clusters}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{median}\PY{p}{(}\PY{p}{)}
+\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}10q}         \PY{o}{=} \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{clusters}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{quantile}\PY{p}{(}\PY{l+m+mf}{.1}\PY{p}{)}
+\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}90q}         \PY{o}{=} \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{clusters}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{quantile}\PY{p}{(}\PY{l+m+mf}{.9}\PY{p}{)}
+
+\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean\PYZus{}mean}   \PY{o}{=} \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{clusters}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}
+\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}std}         \PY{o}{=} \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{clusters}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{std}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Below, the mean +/- 1\(\sigma\) (shaded area) of the normalized and
+clustered size distribution data is shown. The median is plotted as a
+dotted line for comparison. From the graph it is clear that median and
+mean are similar. From this we drew the conclusion that cluster 1 and 2
+may represent NPF events, although both 1 \& 2 are bimodal and extends
+to the accumulation mode. Varying the cluster number did not remove the
+bimodality for the clusters whose normalized distributions peak occurs
+for \(D_p\) \textless{} 100 nm. Moreover, clustering mean and median
+daily distributions using 5 clusters displayed high similarity with the
+clusters shown below (daily clustering is not shown here).
+
+Comparing the results of our clustering analysis with that of Dall'Osto
+et al.~(2017) and their daily mean clusters a few qualitative
+observations could be made. Firstly, two of the clusters classified as
+NPF indicators nucleation or bursting by Dall'Osto et al.~(2017) which
+peak at 10 nm or lower, are most similar to our cluster 1 (however,
+their data was not normalized, nor were clusters plotted alongside each
+other which may make absolute comparison difficult).These clusters also
+have tails extending into the accumulation mode although the bimodality
+is absent or not as pronounced in our hourly (nor daily or median)
+clusters. It should also be mentioned that their third NPF indicator
+cluster (nascent) partly show similarity with our cluster 3 on the left
+hand side of the peak, although our cluster 3 appear to be a
+superposition of two modes and therefore we disregarded this cluster as
+an indicator of NPF.
+
+Lastly, the accumulation mode clusters (cluster 4 and 5) in our analysis
+differ from the two accumulation mode clusters identified by Dall'Osto
+et al.~in the sense that also display bimodality which was note the case
+in their study.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{15}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fu}\PY{o}{.}\PY{n}{plotClustersNormalized}\PY{p}{(}\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{p}{,} \PY{n}{diameters}\PY{p}{,}
+                          \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean\PYZus{}mean}\PY{p}{,} \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}std}\PY{p}{,}
+                          \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean\PYZus{}median}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ReportLovisaFinal_files/ReportLovisaFinal_35_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \hypertarget{comparison-of-npf-indicators}{%
+\subsubsection{Comparison of NPF
+indicators}\label{comparison-of-npf-indicators}}
+
+To make a simple comparison between the three methods used to identify
+NPF events (CPC-approaches, integration method and clustering) the
+annual cycle of the three proxies is shown below.
+
+In the top panel the results from the absolute difference CPC method are
+shown, and mid panel shows the difference between the CPC:s. For some
+instances one of the CPC's appear not have been in operation as it
+showed zero values while DMPS or other CPC was in operation. Therefore
+for these occasions where one CPC equals zero, the data is excluded. In
+the midpanel the integration method results for a diameter threshold
+diameter of 10 nm is shown and indicated by the black dashed line, and
+the shaded area shows the 10 and 90 percentiles of the data. Note that
+this variable is plotted on the right y-axis. In the lower panel, the
+annual cycles plotted as occurrence in hours of the clusters is shown.
+The cluster chosen to represent NPF event is cluster 1 and 2 are
+highlighted.
+
+From the results in the top panel the absolute difference between CPC:s
+indicate a reasonable annual NPF cycle (and similar to that of cluster
+1,2 and 3), which is in contrast to the difference between the CPC:s. As
+the same masking was applied to this data as for only taking the
+difference between the CPCs (mid panel) the absolute difference is
+likely not a good NPF proxy.
+
+It can be observed that the data in the mid panel displays an annual
+cycle not typically associated with NPF events at Zeppelin in previous
+studies (Dall'Osto et al.,2017; Tunved et al., 2013). Their annual
+trends indicates peak in the dark months associated with Arctic haze and
+therefore this method is discarded. These indicators are therefore
+disregarded as NPF indicators. Taking the ration between the UF CPC and
+normal CPC to identify NPF was also discarded (not shown here) as taking
+ratios between numbers with small differences makes it hard to discern
+real differences. Another important conclusion is that the integration
+method was not successful for the choice of thresholds equal to neither
+10,20 or 30 nm (only 10 nm is shown).
+
+Regarding the clusters in the lower panel, it can be observed that
+cluster 1 and 2 exhibits annual trends expected for NPF events. However,
+cluster 3 depicts a similar trend although it was discarded due its very
+broad size distribution. The accumulation mode clusters (4,5) however
+follow the expect annual cycle related to the Arctic Haze phenomena. It
+could also be pointed out that Dall'Osto et al.~(2017) produced a
+similar plot for their NPF indicating clusters indicating similar
+patterns as for cluster 1-3. With regards to annual cycle (not size
+distribution), our cluster 1,2,3 depicts a similar trend as to their
+bursting cluster with peaks in May and close to September, rather than
+in the middle of the summer which was the case for their nucleation and
+nascent clusters. It can be concluded that of all studied methods, the
+clustering method is likely the best proxy for further investigation of
+NPF events in this project.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{16}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Input DFs, clusters, threshold = 10 nm for when to integrate}
+\PY{n}{fu}\PY{o}{.}\PY{n}{plotNPFproxys}\PY{p}{(}\PY{n}{df\PYZus{}hourly\PYZus{}2010\PYZus{}2020\PYZus{}mean}\PY{p}{,}
+              \PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{p}{,}
+              \PY{n}{clusters}\PY{p}{,}
+              \PY{n}{bin\PYZus{}cols}\PY{p}{,}\PY{l+m+mi}{10}\PY{p}{,}\PY{n}{diameters}\PY{p}{,}\PY{n}{diameters\PYZus{}as\PYZus{}strings}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ReportLovisaFinal_files/ReportLovisaFinal_37_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The annual frequency distribution of the clusters is displayed as a
+normalized stacked bar plot of clusters over the studied years
+(2010-2020). During the summer months, cluster 1,2 and 3 dominate as
+opposed to the dark months where the accumulation mode clusters
+dominate. This strengthens the assumption that cluster 4 and 5 are
+indicators of Arctic haze and anthropogenic influence (Schmale \&
+Baccarini, 2021). It is evident that cluster 1 and 2 dominate during the
+summer months. Cluster 3 (not chosen to indicate NPF) appears to follow
+a similar trend although it is present to higher degree than especially
+cluster 1 wintertime. However, cluster 3 remains excluded as an NPF
+proxy due to the shape of its size distribution.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{17}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fu}\PY{o}{.}\PY{n}{makeStackedPlot}\PY{p}{(}\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{p}{,}\PY{n}{clusters}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ReportLovisaFinal_files/ReportLovisaFinal_39_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \hypertarget{trend-for-npf-events}{%
+\subsubsection{Trend for NPF events}\label{trend-for-npf-events}}
+
+    From the previous results, it can be concluded that the clustering
+presents the best choice in comparison to the other methods to study
+trends in NPF at Zeppelin. Potentially it could be interesting to study
+the trend over the years for the different clusters although such
+analysis excluded taking into account variation in NPF drivers such as
+meteorological conditions or variations in NPF precursors or other
+processes affecting the sources of these such as sea ice extent. We
+normalized the cluster frequencies to account for data coverage so that
+cluster occurrence would not be biased.
+
+First the monthly occurrence needs to be determined for each year and
+cluster. \texttt{df\_clusters\_seqMonth\_T} is the transformed version
+of \texttt{df\_clusters\_seqMonth} which contains one row for each
+sequential month in the dataset, and columns for all the clusters where
+the occurrence of each cluster is given. It also contains a column which
+gives the total amount of hours a cluster was represented during this
+month and the month given by number.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{18}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df\PYZus{}clusters\PYZus{}seqMonth}\PY{p}{,} \PY{n}{df\PYZus{}clusters\PYZus{}seqMonth\PYZus{}T} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{prepareDFforTrendPlot}\PY{p}{(}\PY{n}{df\PYZus{}norm\PYZus{}clustered\PYZus{}1h\PYZus{}mean}\PY{p}{,}\PY{n}{clusters}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Choose months of interest in and a dataframe which is normalized for the
+data coverage for plotting is returned by \texttt{makeDFforTrend}. The
+months May to July where chosen as this is the time for when the
+satalitte retirieved chlorophyll has its annual peak (see Keis project).
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{19}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Define the period of interest in terms of months}
+\PY{n}{MJJ\PYZus{}list} \PY{o}{=} \PY{p}{[}\PY{l+m+mi}{5}\PY{p}{,}\PY{l+m+mi}{6}\PY{p}{,}\PY{l+m+mi}{7}\PY{p}{]}
+\PY{n}{all\PYZus{}months\PYZus{}list} \PY{o}{=} \PY{p}{[}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{,}\PY{l+m+mi}{6}\PY{p}{,}\PY{l+m+mi}{7}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{,}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{10}\PY{p}{,}\PY{l+m+mi}{11}\PY{p}{,}\PY{l+m+mi}{12}\PY{p}{]}
+
+\PY{n}{df\PYZus{}norm\PYZus{}MJJ} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{makeDFforTrend}\PY{p}{(}\PY{n}{df\PYZus{}clusters\PYZus{}seqMonth\PYZus{}T}\PY{p}{,}\PY{n}{MJJ\PYZus{}list}\PY{p}{)}
+\PY{n}{df\PYZus{}norm\PYZus{}all} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{makeDFforTrend}\PY{p}{(}\PY{n}{df\PYZus{}clusters\PYZus{}seqMonth\PYZus{}T}\PY{p}{,}\PY{n}{all\PYZus{}months\PYZus{}list}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Below, the Theil-Sen slope and 95\% confidence interval is plotted which
+indicates the trend for the months May, June and July for all clusters.
+The x-axis represents the sequential months (month are counted from the
+first month of the data set). The Thiel-Sen slope is a non-parametric
+method to discern trends. This implies that it is robust as the method
+does not assume that the data is normally distributed. It is best suited
+to study trends to study periods when there is no influence of
+seasonality, in that case other methods are preferred.
+
+No obvious trend can be discerned for any of the clusters, although the
+data display a varying degree of spread. The trends in satellite data
+for chlorophyll and sea ice (Kei's work) were shown to be spatially
+heterogenous for this period. To fully explain the results, additional
+information is needed, such as airmass origin or trends in aerosol
+precursors.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{20}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fu}\PY{o}{.}\PY{n}{plotThielSen}\PY{p}{(}\PY{n}{df\PYZus{}norm\PYZus{}MJJ}\PY{p}{,} \PY{n}{clusters}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{May\PYZhy{}Jun\PYZhy{}Jul}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ReportLovisaFinal_files/ReportLovisaFinal_46_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \hypertarget{npf-relation-to-sea-ice-concentration}{%
+\subsubsection{NPF relation to sea ice
+concentration}\label{npf-relation-to-sea-ice-concentration}}
+
+Our main aim was to make an attempt at reproducing the results from
+Dall'Osto et al.~(2017) who put forward the hypothesis of an
+anti-correlation between sea ice extent and NPF frequency, i.e.~that
+decreasing sea ice in the Barents and Greenland Sea promotes NPF. We
+investigate whether the anti-correlation holds true when more recent
+data is used from the Zeppelin station. Dall'Osto et al.~(2017)
+investigated the years 2000-2010 and this part of our study encompass
+2010-2017 as there was an overlap between DMPS data and sea ice
+satellite data for this period. Here, the annual sea ice concentration
+data (Kei's work) in the Barents and Greenland Sea is used instead of
+sea ice extent. We normalized the NPF observations to data coverage (in
+order to remove this dependence) from cluster 1 and 2 and use the annual
+sum of their frequency as those have been chosen as a proxy for NPF
+events. First, the annual occurrence of cluster 1 and 2 is computed and
+the sea ice concentration data is loaded.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{21}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Compute the monthly and yearly normalized count for all clusters}
+\PY{n}{df\PYZus{}monthly\PYZus{}cluster\PYZus{}count} \PY{o}{=} \PY{n}{df\PYZus{}norm\PYZus{}all}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{n}{deep} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df\PYZus{}yearly\PYZus{}count\PYZus{}clusters} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{DFAnnualCount}\PY{p}{(}\PY{n}{df\PYZus{}norm\PYZus{}all}\PY{p}{,}\PY{n}{clusters}\PY{p}{)}
+
+\PY{c+c1}{\PYZsh{} Compute the total normlized count for cluster 1 and 2 by adding extra column and removing other clusters (=3,4,5)}
+\PY{n}{monthly\PYZus{}cluster\PYZus{}count\PYZus{}12}\PY{p}{,} \PY{n}{df\PYZus{}yearly\PYZus{}cluster\PYZus{}count\PYZus{}12} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{sumCluster12}\PY{p}{(}\PY{n}{df\PYZus{}monthly\PYZus{}cluster\PYZus{}count}\PY{p}{,}\PY{n}{df\PYZus{}yearly\PYZus{}count\PYZus{}clusters}\PY{p}{)}
+\PY{n}{sea\PYZus{}ice\PYZus{}annual} \PY{o}{=} \PY{n}{fu}\PY{o}{.}\PY{n}{readSeaIcetoDF}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    The results shown below gives little confidence in the hypothesis that
+NPF at Zeppelin is anti-correlated with sea ice concentration in the
+studied region between 2010-2017 (\(R^2\) = 0.21, \(p\) = 0.25). The
+p-value is the two-sided p-value for a hypothesis test whose null
+hypothesis is that the slope is zero (no correlation). The calculated
+p-value and \(R^2\) is not enough to reject this null-hypothesis. There
+are several explanations that are possible for this. For example, the
+sample size is quite low, or there is simply no correlation between sea
+ice concentration in the studied region and NPF, but that does not means
+changes in other NPF drivers have not occurred simultaneously or in
+other regions which have an effect on NPF drivers. Furthermore, it may
+be that the 1h-clusters to represent NPF events chosen do not capture
+the NPF events properly.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{22}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fu}\PY{o}{.}\PY{n}{plotNPFvsSeaIce}\PY{p}{(}\PY{n}{sea\PYZus{}ice\PYZus{}annual}\PY{p}{,}\PY{n}{df\PYZus{}yearly\PYZus{}cluster\PYZus{}count\PYZus{}12}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ReportLovisaFinal_files/ReportLovisaFinal_50_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \hypertarget{discussion}{%
+\subsection{Discussion}\label{discussion}}
+
+NPF is an import source of CCN in the Arctic where clouds exert a net
+warming effect. However, the process driving NPF, and cloud droplet
+response are complex (Birch et al., 2012). The main objective of this
+project was to examine if the conclusions from Dall'Osto et al.~(2017)
+holds true for more recent years, i.e.~that there is a causal
+relationship between sea ice loss and NPF at the Zeppelin station
+located in the Arctic for. A second objective was to investigate
+different methods for identification of NPF events.
+
+To investigate the effect of sea ice melt on NPF frequency, the
+identification of NPF events is crucial. Here, the K-means clustering
+presented the best option in comparison to other methods that were
+tested. However, using unsupervised machine learning implies little
+insight to the actual clustering procedure. Two metrics were used to
+evaluate the performance of the clustering, but several others are
+available which might affect the choice of \(k\) which is crucial to our
+analysis. The Dunn Index for example provides information how compact
+and well separated clusters. The higher the Dunn Index, the better.
+Dall'Osto et al.~(2017) computed the Dunn Index and average silhouette
+score for their clusters, but their calculated Dunn index was close to
+zero (see supplement) meaning that clusters on average are not well
+separated. In this work we faced similar issues (although the Dunn Index
+was not calculated) but the inertia and average silhouette score
+calculation results were hard to clearly draw conclusions on the optimal
+cluster number from.
+
+Even though the clustering method may not be optimal, the results
+present some interesting features. For example, the bimodality of some
+of the clusters in our clustered 2010-2020 DMPS data was not as
+prounounced in the work of Dall'Osto et al.~It could be speculated (if
+we decide to trust our method blindly) weather the bimodality and
+cluster 3 which follows the same annual trend as the NPF cluster (1 and
+2), suppresses the NPF formation by providing an additional condensation
+sink, and therefore we are unable to reproduce the anticorrelation of
+NPF and sea ice presented by Dall'Osto et al.~(2017).
+
+We found no evidence of an anti-correlation between NPF and sea ice
+concentration. A direct comparison is impaired by the different years
+Dall'Osto et al.'s study and ours target. Moreover, it is unclear
+weather their NPF frequency was adjusted for data coverage. The
+relationship between NPF and air mass origin is also something that
+needs to be accounted for, as marine air masses that contribute to NPF
+may come from regions unaffected by sea ice melt. Mixed and spatially
+heterogenoues trends in chlorophyll satellite data which is indicator of
+microbiological activity (and source of NPF precursor gases) emphasizes
+the need for back trajectory analysis in our work.
+
+    \hypertarget{conclusions-and-outlook}{%
+\subsection{Conclusions and outlook}\label{conclusions-and-outlook}}
+
+We observed no trends for individual DMPS clusters, nor an
+anti-correlation of NPF to sea ice concentration in the Barents and
+Greenland Sea. As Kei found that trends are spatially heterogeneous for
+chlorophyll and sea ice concentration, back trajectory analysis would
+provide valuable insight into the driving forces of NPF event at
+Zeppelin in a rapidly warming Arctic.
+
+For future work a more careful cluster optimization is advised. Other
+features of the size distributions than shape, such as modal diameter or
+width could also be extracted clustered. Another aspect of sea ice loss
+is a presumed increase in anthropogenic activity in the Arctic such as
+increased shipping. Looking into to changes in this over the last twenty
+years could also help with the task of identifying what drives NPF at
+Zeppelin.
+
+    \hypertarget{references}{%
+\subsection{References}\label{references}}
+
+Birch, C. E., Brooks, I. M., Tjernström, M., Shupe, M. D., Mauritsen,
+T., Sedlar, J., \ldots{} \& Leck, C. (2012). Modelling atmospheric
+structure, cloud and their response to CCN in the central Arctic: ASCOS
+case studies. Atmospheric Chemistry and Physics, 12(7), 3419-3435.
+
+Dall´Osto, M., Beddows, D., Tunved, P. et al.~Arctic sea ice melt leads
+to atmospheric new particle formation. Sci Rep 7, 3318 (2017).
+https://doi.org/10.1038/s41598-017-03328-1
+
+Galí, M., Devred, E., Babin, M., \& Levasseur, M. (2019). Decadal
+increase in Arctic dimethylsulfide emission. Proceedings of the National
+Academy of Sciences of the United States of America, 116(39),
+19311--19317. https://doi.org/10.1073/pnas.1904378116
+
+Schmale, J., \& Baccarini, A. (2021). Progress in unraveling atmospheric
+new particle formation and growth across the Arctic. Geophysical
+Research Letters, 48(14), e2021GL094198.
+
+Tunved, P., Ström, J. \& Krejci, R. Arctic aerosol life cycle: linking
+aerosol size distributions observed between 2000 and 2010 with air mass
+transport and precipitation at Zeppelin station, Ny-Ålesund, Svalbard.
+Atmos. Chem. Phys. 13, 3643--3660 (2013).
+
+Perovich, D., Meier, W., Tschudi, M., Farrell, S., Hendricks, S.,
+Gerland, S., \ldots{} \& Webster, M. (2018). Sea ice. NOAA Arctic Report
+Card.
+
+
+    % Add a bibliography block to the postdoc
+    
+    
+    
+\end{document}

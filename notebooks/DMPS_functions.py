@@ -18,6 +18,7 @@ import seaborn as sns
 from sklearn.metrics import davies_bouldin_score
 
 
+
 bin_col_names_2010_2020 = ['5.0118723e-09', '5.6234133e-09', '6.3095734e-09',
        '7.0794578e-09', '7.9432823e-09', '8.9125094e-09', '1.0000000e-08',
        '1.1220185e-08', '1.2589254e-08', '1.4125375e-08', '1.5848932e-08',
@@ -38,7 +39,10 @@ additional_2010_2020 = ['Year', 'Month', 'Day', 'Hour', 'Minute', 'UFCPC','CPC30
 
 dict_season_to_season_long_name = {'Summer':'Summer (JJAS)', 'Slow build up': 'Slow build up  (ONDJ)', 
                                    'Arctic Haze':'Arctic Haze (FMAM)','':''}               
-          
+
+def importData(path):
+    glob.glob(path+'\\*')
+    return    
        
 def get_columns_2010_2020(additional_2010_2020, bin_col_names_2010_2020):
     """[YYYY, MM, DD, HH, mm, UF(?)CPC, CPC3010, N_int, bin1:end, numflag]. Sizes in m and dN/dlogdp in cm-3. This data is level 2."""
@@ -54,20 +58,20 @@ def get_bin_column_string_list():
 def load_and_append_DMPS(inpath, name_in_file):
     """[YYYY, MM, DD, HH, mm, UF(?)CPC, CPC3010, N_int, bin1:end, numflag]. Sizes in m and dN/dlogdp in cm-3. This data is level 2."""    
     cols = get_columns_2010_2020(additional_2010_2020, bin_col_names_2010_2020)    
-    print(cols)
+    # print(cols)
     DFs = []
     folder = glob.glob(inpath+str(name_in_file)+'*.dat')
     folder.sort()
     for file in folder: 
-        print(file)
+        #print(file)
         ds = pd.read_csv(file, sep='\s+',index_col=False, skiprows=1, names=cols)     
         ds[['Year', 'Month', 'Day', 'Hour', 'Minute']] = ds[['Year', 'Month', 'Day', 'Hour', 'Minute']].astype(int)
         ds['DateTime'] = ds[['Year', 'Month', 'Day', 'Hour', 'Minute']].apply(lambda s : datetime.datetime(*s),axis = 1)
         ds = ds.drop(['Year', 'Month', 'Day', 'Hour', 'Minute'], axis=1)
         ds = ds.set_index('DateTime')        
-        print("Size without flags removed: "+str(len(ds)))
+        #print("Size without flags removed: "+str(len(ds)))
         ds = ds[ds.loc[:,'flag'] != 0.999] #remove these
-        print("Size flags removed: "+str(len(ds)))  
+        #print("Size flags removed: "+str(len(ds)))  
         
         DFs.append(ds)
     return DFs
@@ -185,12 +189,12 @@ def compareIntegration(N_calc,N_meas):
     res = sc.stats.linregress(varx[mask], vary[mask])
 
     print(f"R-squared: {res.rvalue**2:.6f}")
-
-    plt.plot(varx,
-             vary,
+    fig = plt.figure(figsize=(4, 4))
+    plt.plot(varx[mask],
+             vary[mask],
              'o', label='original data')
-    plt.plot(varx,
-             res.intercept + res.slope*varx,
+    plt.plot(varx[mask],
+             res.intercept + res.slope*varx[mask],
              'r-', label='fitted line')
     plt.legend()  
     plt.ylabel('Measured $N_{tot}$ [#/$cm^3]$')
@@ -681,29 +685,54 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     df_tmp_nxntot_90q = df_tmp_nxntot['NxNtot'].groupby(df_tmp_nxntot.index.month).quantile(0.9)
     
     # Create absolute diff Uf cpc - cpc----------------------------------------------------------
-
+    
+    
     df_tmp['abs_diff'] = np.absolute(df_tmp['UFCPC']-df_tmp['CPC3010'])
 
     df_tmp_adiff = df_tmp.copy(deep = True)
 
     # Drop NaN's
     df_tmp_adiff = df_tmp_adiff.dropna(subset =['abs_diff'])
+    
+    df_tmp['diff_cpcs'] = df_tmp['UFCPC'].values - df_tmp['CPC3010'].values
+    # we dont want of the measuring zero, then it goes to inf or nan
+    maskcpc = (df_tmp['UFCPC'].values !=0 ) & (df_tmp['CPC3010'].values !=0 )
+    
+    # Drop zeros wwith mask
+    df_tmp_adiff.drop(df_tmp_adiff[maskcpc].index, inplace=True)
 
-    df_1h_annual_cycle_adiff_mean = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).mean()
-    df_1h_annual_cycle_adiff_std = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).std()
+    df_1h_annual_cycle_adiff_mean  = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).mean()
+    df_1h_annual_cycle_adiff_std   = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).std()
 
     df_1h_annual_cycle_adiff_median = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).median()
-    df_1h_annual_cycle_adiff_10q = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).quantile(0.1)
-    df_1h_annual_cycle_adiff_90q = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).quantile(0.9)
-    #-------------------------------------------------------------------------------------------------------
+    df_1h_annual_cycle_adiff_10q    = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).quantile(0.1)
+    df_1h_annual_cycle_adiff_90q    = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).quantile(0.9)
     
+    ## Create diff UFcpc and cpc--------------------------------------------------------------------------
+      
+    # Have to drop nans!!
+
+    df_tmp_diff = df_tmp.copy(deep = True)
+    df_tmp_diff = df_tmp_diff.dropna(subset =['diff_cpcs'])
+
+    # Drop colmuns where mask is
+    df_tmp_diff.drop(df_tmp_diff[maskcpc].index, inplace=True)
+
+    df_1h_annual_cycle_diff_mean   = df_tmp_diff['diff_cpcs'].groupby(df_tmp_diff.index.month).mean()
+    df_1h_annual_cycle_diff_std    = df_tmp_diff['diff_cpcs'].groupby(df_tmp_diff.index.month).std()
+
+    df_1h_annual_cycle_diff_median = df_tmp_diff['diff_cpcs'].groupby(df_tmp_diff.index.month).median()
+    df_1h_annual_cycle_diff_10q    = df_tmp_diff['diff_cpcs'].groupby(df_tmp_diff.index.month).quantile(0.1)
+    df_1h_annual_cycle_diff_90q    = df_tmp_diff['diff_cpcs'].groupby(df_tmp_diff.index.month).quantile(0.9)
+
+    #--------------------------------------------------------------------------------------------------
     
     # Plot
     fig = plt.figure(figsize=(8, 8))
     
     month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
     
-    ax = plt.subplot(2, 1, 1)
+    ax = plt.subplot(3, 1, 1)
     
     # Plot abs diff median
     ax.plot(df_1h_annual_cycle_adiff_median.index, 
@@ -712,8 +741,8 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     ax.fill_between(df_1h_annual_cycle_adiff_median.index,
                 df_1h_annual_cycle_adiff_90q,
                 df_1h_annual_cycle_adiff_10q,
-                color ='r',alpha=0.2,label= str(10)+'-'+str(90)+' percentiles')
-    
+                color ='r',alpha=0.1,label= str(10)+'-'+str(90)+' percentiles')
+        
     # Plot abs diff mean
     ax.plot(df_1h_annual_cycle_adiff_mean.index, 
                df_1h_annual_cycle_adiff_mean.values,
@@ -722,11 +751,45 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     # It is unreasonable for std to be less than zero (plotting artefact)
     neg_std = df_1h_annual_cycle_adiff_mean.values - df_1h_annual_cycle_adiff_std
     neg_std[neg_std < 0] = 0
-    ax.fill_between(df_1h_annual_cycle_adiff_median.index,
+    ax.fill_between(df_1h_annual_cycle_adiff_mean.index,
                 df_1h_annual_cycle_adiff_mean.values + df_1h_annual_cycle_adiff_std.values,
                 neg_std,
-                color ='b',alpha=0.2,label = '+/-1$\sigma$') 
-    plt.legend(frameon=False,bbox_to_anchor=(1.5, 1))     
+                color ='b',alpha=0.1,label = '+/-1$\sigma$') 
+    plt.legend(frameon=False,bbox_to_anchor=(1.6, 1))
+    plt.xticks(rotation = 45)
+    # xticks color white
+    plt.xticks(color='w')
+    ax.set_ylabel('$|CPC_{UF}-CPC|$ \n [#/cm3]')
+    
+    ax = plt.subplot(3, 1, 2)
+    # Plot diff median
+    ax.plot(df_1h_annual_cycle_diff_median.index, 
+               df_1h_annual_cycle_diff_median.values,
+               label = 'Median $CPC_{UF}-CPC$',color ='g')
+    ax.fill_between(df_1h_annual_cycle_diff_median.index,
+                df_1h_annual_cycle_diff_90q,
+                df_1h_annual_cycle_diff_10q,
+                color ='g',alpha=0.2,
+                label= str(10)+'-'+str(90)+' percentiles')
+        
+    # Plot  diff mean
+    
+    ax.plot(df_1h_annual_cycle_diff_mean.index, 
+               df_1h_annual_cycle_diff_mean.values,
+               label = 'Mean $CPC_{UF}-CPC$',color ='m',linestyle = ':')
+    
+    ax.fill_between(df_1h_annual_cycle_diff_mean.index,
+                df_1h_annual_cycle_diff_mean.values + df_1h_annual_cycle_adiff_std.values,
+                df_1h_annual_cycle_diff_mean.values - df_1h_annual_cycle_adiff_std.values,
+                color ='m',alpha=0.2,label = '+/-1$\sigma$',hatch = 'x')
+    ax.set_ylabel('$CPC_{UF}-CPC$ \n [#/cm3]')
+    plt.legend(frameon=False,bbox_to_anchor=(1.57, 1))
+    plt.xticks(rotation = 45)
+    # xticks color white
+    plt.xticks(color='w')
+    
+    #------------
+    
     # Plot Nx/Ntot
     axt = ax.twinx()
     axt.plot(df_tmp_nxntot_median.index, 
@@ -739,15 +802,13 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     axt.set_ylabel('$N_x/N_{tot}$ [a.u.]')
      
     
-   
-    plt.xticks(np.arange(1, 13, 1), month_names)
-    ax.set_ylabel('$|CPC_{UF}-CPC|$ [#/cm3]')
     plt.xticks(rotation = 45)
+    plt.xticks(np.arange(1, 13, 1), month_names)
+    
+    
     #----------------------------------------------------------------------------------------------
     # Next subplot for clusters
-    ax2 = plt.subplot(2, 1, 2)
-    
-
+    ax2 = plt.subplot(3, 1, 3)
     
     # Define colormap
     n = len(clusterIDs)
@@ -768,7 +829,7 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
             ax2.plot(mcOcc_dt,mcOcc,'-x',label='cluster: '+str(clusterID),
             alpha = 0.5,color = colors[i])
         i = i+1
-    ax2.set_ylabel('Occurence [hours]')
+    ax2.set_ylabel('Occurence \n [hours]')
     plt.legend(frameon=False,bbox_to_anchor=(1.3, 1))    
     plt.xticks(np.arange(1, 13, 1), month_names)
     plt.xticks(rotation = 45)
@@ -799,7 +860,7 @@ def makeDFforStackedPlot(df_norm_clustered_1h_mean, clusters):
         df_clusters_month[cluster] = monthly_occurance
 
     df_clusters_month['total_freq'] = df_clusters_month.sum(axis=1)
-    # Normalizing 
+    # Calculating the percentage 
     df_clusters_month_ = df_clusters_month.div(df_clusters_month['total_freq'], axis=0) 
 
     df_clusters_month  = df_clusters_month_.copy(deep=True)
@@ -817,7 +878,7 @@ def makeStackedPlot(df_norm_clustered_1h_mean, clusters):
                     width = 0.9,            
                     figsize=(6, 4))
 
-    plt.ylabel("Normalized occurence")
+    plt.ylabel("Normalized frequency")
     plt.ylim(0,1)
     plt.legend(title = 'Cluster:',frameon=False,bbox_to_anchor=(1, 1))
     plt.xticks(np.arange(0, 12, 1), month_names,)
@@ -922,7 +983,7 @@ def plotScatter(df_norm_period, clusters):
                 df_norm_period[str(cluster)].values,
                 s = 30,
                 c = df_['month'].values,
-                cmap='hot')
+                cmap='Greens')
                 
         i = i + 1
 
@@ -1001,3 +1062,211 @@ def DFAnnualCount(df_norm_all,clusters):
     df_year = df.copy(deep = True)
     
     return df_year
+    
+    
+def plotThielSen(df_norm_period, clusters,title):
+    
+    # Not suitable for full year -then use Mann-Kendall 
+    
+    df = df_norm_period.copy(deep=True)
+        
+    # Fix DF for Theil SEN
+    df['year'] = df.index.year
+    df['year'] = df['year'] - df['year'].iloc[0]
+    df['month'] = df.index.month
+    df['month_ordered'] = df['year']*12 + df['month'] 
+    df['month_ordered'] = df['month_ordered'] - df['month_ordered'].iloc[0] + 1
+    
+    # Compute the Julian day
+    df['julianDay'] = df.index.map(datetime.datetime.toordinal) + 1721424.5
+
+    n = len(clusters)
+    colors = cm.Set2(np.linspace(0,1,n))
+    
+    
+    fig = plt.figure(figsize=(8, 8))
+    
+    i = 1
+
+    # Plot Theil Sen for all clusters colored by cluster ID
+    
+    for cluster, n_ax in zip(clusters, range(0,5)):
+                
+        varx = df['month_ordered'].values
+        vary = df[str(cluster)].values
+
+        # For trend analysis we use theil zen slope
+        slope, intercept, lo_slope, up_slope  = sc.stats.theilslopes(vary, varx, 0.95)
+
+#         print('---------------------------')
+#         print('Theil-Sen slope')
+#         print('Slope:',slope)
+#         print('Intercept:',intercept)
+#         print('Lower bound of the confidence interval on medslopeLower:',lo_slope)
+#         print('Upper bound of the confidence interval on medslopeLower:',up_slope)
+#         print('---------------------------')
+
+        ax = plt.subplot(3,2,i)
+        ax.set_title('Cluster ' + str(cluster))
+        # Plot datapoints as x:es
+        ax.plot(varx, vary, 'x:', color = colors[cluster-1])
+        
+        ax2 = ax.twiny()
+                
+        # Plot 
+        ax2.plot(varx, intercept + slope * varx, '-', 
+                 label='y = '+str( round(slope, 3) )+'x +' +str(round(intercept,3) ),
+                 color = colors[cluster-1])
+        ax2.fill_between(varx, 
+               intercept + up_slope * varx,
+               intercept + lo_slope * varx,
+               alpha=0.2,color = colors[cluster-1],
+               label= '95% Confidence')
+        
+        ax2.legend(frameon=False)
+        ax2.set_xticks([])
+        ax.set_ylim([-0.1,0.8])
+        #plt.xticks(rotation = 45)
+        i = i+1
+
+        
+    
+    fig.add_subplot(111, frame_on=False)
+    plt.ylabel("NPF events [a.u.] \n (hours normalized to data coverage)")
+
+        
+    #Needed to not mess up labels
+    plt.tick_params(labelcolor="none", bottom=False, left=False)
+    plt.suptitle(title)
+    fig.tight_layout()
+    plt.show()
+    
+    return 
+    
+def sumCluster12(df_monthly_cluster_count,df_yearly_count_clusters):
+    '''Make df:s with months as indicies and on column for the total count, yearly and monthly'''
+    df_m = df_monthly_cluster_count.copy(deep = True)
+    df_y = df_yearly_count_clusters.copy(deep = True)
+    
+    #-Montly----------------------
+    #display(df_m)
+    
+    # Delete uneessary columns in dataframes 
+    del df_m['3']
+    del df_m['4']
+    del df_m['5']
+    
+    del df_y['3']
+    del df_y['4']
+    del df_y['5']
+    
+    
+    #display(df_m)     
+
+    # Add new sum column
+    df_m['12'] = df_m['1'].values + df_m['2'].values
+    df_y['12'] = df_y['1'].values + df_y['2'].values
+    
+    #display(df_m)
+    
+    # Return 
+    df_m_copy = df_m.copy(deep = True)
+    df_y_copy = df_y.copy(deep = True)
+    
+    return df_m_copy, df_y_copy
+    
+def readSeaIcetoDF():
+    '''Read the annual sea ice concentration to a data frame '''
+    
+    # Defining the to sea ice concentration data
+    path = "C:\\Users\\Lovisa\\Documents\\GitHub\\Tjaernoe2022-group3\\notebooks\\data\\ave_sea_ice.csv"
+    #path = 'C:\Users\Lovisa\Documents\GitHub\Tjaernoe2022-group3\notebooks\data\ave_sea_ice.csv'
+    df = pd.read_csv(path)
+    
+    del df['Unnamed: 0']
+    years = df['Year'].values
+    years_str = [str(i) for i in years]
+    df.index = years_str
+    
+    return df
+    
+def plotNPFvsSeaIce(sea_ice_annual,df_yearly_cluster_count_12):
+    df_sea_ice = sea_ice_annual.copy(deep = True)
+    df_NPF = df_yearly_cluster_count_12.copy(deep= True)
+    
+    # Extract data for matching years
+    start_year_NPF = df_NPF.index[0]
+    end_year_NPF   = df_NPF.index[-1]
+    
+    start_year_sea_ice = df_sea_ice.index[0]
+    end_year_sea_ice   = df_sea_ice.index[-1]
+    
+    start, end = find_overlap(start_year_NPF,end_year_NPF,start_year_sea_ice,end_year_sea_ice)
+    #print(start,end)
+    
+    years_ice = df_sea_ice.index.values
+    years_NPF = df_NPF.index.values
+       
+    mask_ice = (years_ice >= start) & (years_ice <= end)
+    mask_NPF = (years_NPF >= start) & (years_NPF <= end)
+    
+#     print(years_ice[mask_ice])
+#     print(years_NPF[mask_NPF])
+    
+    fig = plt.figure(figsize=(6, 4))
+    
+    ax = plt.subplot(1,1,1)
+    
+    ax.plot(df_sea_ice['Sea ice conc (%)'].values[mask_ice],
+           df_NPF['12'].values[mask_NPF],
+           'ko',label = 'Normalized NPF occurence \n (sum of cluster 1 and 2)')
+    ax.set_xlabel('Sea ice concentration [%] \n (Barents Sea and Greenland Sea)')
+    ax.set_ylabel("NPF events [a.u.] \n (hours normalized to data coverage)")
+    
+    varx = df_sea_ice['Sea ice conc (%)'].values[mask_ice]
+    vary = df_NPF['12'].values[mask_NPF]
+    
+    # Add annotations
+#     for xy in zip(varx, vary):                                       
+#         ax.annotate('(%s, %s)' % xy, xy=xy, textcoords=labels_str) 
+#    ax.annotate(text[i], (x[i], y[i] + 0.2))
+
+    labels = years_ice[mask_ice]
+    labels_str =[str(i) for i in labels] 
+    
+    for i in range(len(varx)):
+        plt.annotate(labels_str[i], (varx[i], vary[i] + 0.2))
+        
+    # Fit regression line 
+    res = sc.stats.linregress(varx, vary)
+    #print(res.pvalue)
+
+#     print(f"R-squared: {res.rvalue**2:.6f}")
+#     print('Intercept:',res.intercept)
+#     print('Slope:',res.slope)
+
+    ax.plot(varx,
+             res.intercept + res.slope*varx,
+             'r-', 
+            label='y = '+str( round(res.slope, 3) )+'x +' +str(round(res.intercept,3))
+           + ' \n $R^2$ = ' + str( round(res.rvalue**2,3) ) + ', $p$ = ' +str( round(res.pvalue,2) ) )
+    ax.legend(frameon = False, bbox_to_anchor=(1.65, 1))
+    plt.xlim(14.5,21.5)
+    plt.ylim(-0.1,5.5)
+    plt.show()
+
+    return
+    
+def find_overlap(start_year_NPF,end_year_NPF,start_year_sea_ice,end_year_sea_ice):
+    
+    if start_year_NPF >= start_year_sea_ice:
+        start = start_year_NPF
+    else:
+        start = start_year_sea_ice
+            
+    if end_year_NPF >= end_year_sea_ice:
+        end = end_year_sea_ice
+    else:
+        end = end_year_NPF
+        
+    return start, end
