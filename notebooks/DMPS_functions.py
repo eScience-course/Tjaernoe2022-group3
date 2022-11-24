@@ -693,13 +693,14 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
 
     # Drop NaN's
     df_tmp_adiff = df_tmp_adiff.dropna(subset =['abs_diff'])
+        
+    # we dont want of the measuring zero or less?
+    # a bad mask!
+    #maskcpc = (df_tmp['UFCPC'].values !=0 ) & (df_tmp['CPC3010'].values !=0 )
     
-    df_tmp['diff_cpcs'] = df_tmp['UFCPC'].values - df_tmp['CPC3010'].values
-    # we dont want of the measuring zero, then it goes to inf or nan
-    maskcpc = (df_tmp['UFCPC'].values !=0 ) & (df_tmp['CPC3010'].values !=0 )
+    #Better to drop rows like this
+    df_tmp_adiff = df_tmp_adiff.drop(df_tmp_adiff[(df_tmp_adiff.UFCPC == 0) | (df_tmp_adiff.CPC3010 == 0)].index)
     
-    # Drop zeros wwith mask
-    df_tmp_adiff.drop(df_tmp_adiff[maskcpc].index, inplace=True)
 
     df_1h_annual_cycle_adiff_mean  = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).mean()
     df_1h_annual_cycle_adiff_std   = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).std()
@@ -709,14 +710,14 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     df_1h_annual_cycle_adiff_90q    = df_tmp_adiff['abs_diff'].groupby(df_tmp_adiff.index.month).quantile(0.9)
     
     ## Create diff UFcpc and cpc--------------------------------------------------------------------------
-      
+    df_tmp['diff_cpcs'] = df_tmp['UFCPC'].values - df_tmp['CPC3010'].values  
     # Have to drop nans!!
 
     df_tmp_diff = df_tmp.copy(deep = True)
     df_tmp_diff = df_tmp_diff.dropna(subset =['diff_cpcs'])
 
     # Drop colmuns where mask is
-    df_tmp_diff.drop(df_tmp_diff[maskcpc].index, inplace=True)
+    df_tmp_diff = df_tmp_diff.drop(df_tmp_diff[(df_tmp_diff.UFCPC == 0) | (df_tmp_diff.CPC3010 == 0)].index)
 
     df_1h_annual_cycle_diff_mean   = df_tmp_diff['diff_cpcs'].groupby(df_tmp_diff.index.month).mean()
     df_1h_annual_cycle_diff_std    = df_tmp_diff['diff_cpcs'].groupby(df_tmp_diff.index.month).std()
@@ -733,6 +734,7 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
     
     ax = plt.subplot(3, 1, 1)
+    
     
     # Plot abs diff median
     ax.plot(df_1h_annual_cycle_adiff_median.index, 
@@ -762,6 +764,7 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     ax.set_ylabel('$|CPC_{UF}-CPC|$ \n [#/cm3]')
     
     ax = plt.subplot(3, 1, 2)
+    ax.axhline(y=0, color='k', linestyle='-',alpha = 0.7)
     # Plot diff median
     ax.plot(df_1h_annual_cycle_diff_median.index, 
                df_1h_annual_cycle_diff_median.values,
@@ -1020,10 +1023,12 @@ def DFAnnualCount(df_norm_all,clusters):
     
     for year in years:  
         
+        # Do it year by year --> slice df
         df_year_sliced = df_norm_all_test[df_norm_all_test['year'] == year]
         #print(df_year_sliced.head())
         
         df_tmp = df_year_sliced.copy(deep = True)
+
         
         # Delete column years
         del df_tmp['year']
@@ -1037,7 +1042,7 @@ def DFAnnualCount(df_norm_all,clusters):
         year_count_cluster.append(s_sum.values)
         #print(year_count_cluster) 
     
-     # Make dataframe from lists with columns as clusters and years as rows
+    # Make dataframe from lists with columns as clusters and years as rows
     # year_count_cluster is a list of np arrays with length year. 
     # Each np.array contains five elements, one for each cluster 
     
@@ -1069,7 +1074,8 @@ def plotThielSen(df_norm_period, clusters,title):
     # Not suitable for full year -then use Mann-Kendall 
     
     df = df_norm_period.copy(deep=True)
-        
+    
+            
     # Fix DF for Theil SEN
     df['year'] = df.index.year
     df['year'] = df['year'] - df['year'].iloc[0]
@@ -1111,21 +1117,30 @@ def plotThielSen(df_norm_period, clusters,title):
         # Plot datapoints as x:es
         ax.plot(varx, vary, 'x:', color = colors[cluster-1])
         
-        ax2 = ax.twiny()
+
                 
-        # Plot 
-        ax2.plot(varx, intercept + slope * varx, '-', 
-                 label='y = '+str( round(slope, 3) )+'x +' +str(round(intercept,3) ),
+        # # Plot 
+        
+        # # Convert the trend unit from frequency/month to frequency/year in percetage
+        # # by multiplying with this convertion factor
+
+        # #cf = 12.0*100.0
+        cf =1.0
+
+        ax.plot(varx, intercept + slope * varx, '-', 
+                 label='y = '+str( round(cf *slope, 3) )+'x +' +str(round(cf *intercept,3) ),
                  color = colors[cluster-1])
-        ax2.fill_between(varx, 
+        ax.fill_between(varx, 
                intercept + up_slope * varx,
                intercept + lo_slope * varx,
-               alpha=0.2,color = colors[cluster-1],
-               label= '95% Confidence')
+               alpha = 0.2,color = colors[cluster-1],
+               label = '95% Confidence')
         
-        ax2.legend(frameon=False)
-        ax2.set_xticks([])
+        ax.legend(frameon=False)
+        #ax2.set_xticks([])
         ax.set_ylim([-0.1,0.8])
+        #---------------------------------------
+        
         #plt.xticks(rotation = 45)
         i = i+1
 
@@ -1133,7 +1148,7 @@ def plotThielSen(df_norm_period, clusters,title):
     
     fig.add_subplot(111, frame_on=False)
     plt.ylabel("NPF events [a.u.] \n (hours normalized to data coverage)")
-
+    plt.xlabel('Consequtive months')
         
     #Needed to not mess up labels
     plt.tick_params(labelcolor="none", bottom=False, left=False)
@@ -1252,7 +1267,7 @@ def plotNPFvsSeaIce(sea_ice_annual,df_yearly_cluster_count_12):
            + ' \n $R^2$ = ' + str( round(res.rvalue**2,3) ) + ', $p$ = ' +str( round(res.pvalue,2) ) )
     ax.legend(frameon = False, bbox_to_anchor=(1.65, 1))
     plt.xlim(14.5,21.5)
-    plt.ylim(-0.1,5.5)
+    plt.ylim(-0.1,1)
     plt.show()
 
     return
@@ -1270,3 +1285,69 @@ def find_overlap(start_year_NPF,end_year_NPF,start_year_sea_ice,end_year_sea_ice
         end = end_year_NPF
         
     return start, end
+    
+def DFAnnualCountNorm(df_norm_clustered_1h_mean,clusters):
+        
+    df = df_norm_clustered_1h_mean.copy(deep=True)
+    df['year']  = df.index.year
+    #print(df.head())
+    
+    years = df['year'].unique() 
+    
+    # Make a df with sum normalized count per year and cluster
+   
+    # Make a dataframe
+    df_count_norm = pd.concat([pd.Series(x) for x in years], axis=1)
+    df_count_norm = df_count_norm.T
+    
+    # First column is just named 0 for some reason, schange to year
+    df_count_norm.rename(columns = {0:'year'}, inplace = True)
+    #print(df_count_norm)
+    
+    for cluster in clusters: 
+        year_list = []
+        year_count_clusters = [] 
+        all_total_year_datapoints = []
+        all_years_count_norm = []
+        for year in years: 
+            # Do it year by year --> slice df
+            df_year_sliced = df[df['year'] == year]
+            
+            #print(df_year_sliced.head())
+
+            df_tmp = df_year_sliced.copy(deep = True)
+
+            # Calulated total datapoints that year
+            total_year_datapoints = len(df_tmp['clusters'].values)
+
+            # Remove rows not equal to cluster number
+            df_tmp = df_tmp.drop(df_tmp[(df_tmp.clusters != cluster)].index)
+
+            #print(df_tmp.head())
+
+            #Total number of datapoints in year for cluster = cluster_no
+            year_count_cluster = len(df_tmp['clusters'].values)
+
+            year_count_clusters.append(year_count_cluster)
+            year_list.append(year)
+            all_total_year_datapoints.append(total_year_datapoints)
+            
+            # division of lists
+            # using zip() + list comprehension
+            res = [i / j for i, j in zip(year_count_clusters, all_total_year_datapoints)]
+            all_years_count_norm = np.array(res)
+            #all_years_count_norm.append(arr)
+       
+        #print('length all_years_count_norm:',len(all_years_count_norm))
+        # Add column for cluster with norm counts
+        df_count_norm[str(cluster)] = all_years_count_norm
+        
+    # Rename indicies to years
+    years_str= [str(i) for i in years]
+    df_count_norm.index = years_str
+    del df_count_norm['year']
+    
+        
+    df_count_norm_copy = df_count_norm.copy(deep = True)
+ 
+    return df_count_norm_copy
