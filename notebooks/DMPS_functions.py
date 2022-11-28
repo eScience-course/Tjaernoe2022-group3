@@ -1122,13 +1122,15 @@ def plotThielSen(df_norm_period, clusters,title):
         # # Plot 
         
         # # Convert the trend unit from frequency/month to frequency/year in percetage
-        # # by multiplying with this convertion factor
+        # # by multiplying the slope with this convertion factor
+        # Then you get change in normalized frequency per year
 
-        # #cf = 12.0*100.0
-        cf =1.0
+        
+        cf = 12.0*100.0
 
         ax.plot(varx, intercept + slope * varx, '-', 
-                 label='y = '+str( round(cf *slope, 3) )+'x +' +str(round(cf *intercept,3) ),
+                 #label='y = '+str( round(cf *slope, 1) )+'x +' +str(round(intercept,1) ),
+                 label='Slope: '+str( round(cf *slope, 1) )+'%/year' ,
                  color = colors[cluster-1])
         ax.fill_between(varx, 
                intercept + up_slope * varx,
@@ -1138,7 +1140,7 @@ def plotThielSen(df_norm_period, clusters,title):
         
         ax.legend(frameon=False)
         #ax2.set_xticks([])
-        ax.set_ylim([-0.1,0.8])
+        ax.set_ylim([-0.1,1])
         #---------------------------------------
         
         #plt.xticks(rotation = 45)
@@ -1236,11 +1238,12 @@ def plotNPFvsSeaIce(sea_ice_annual,df_yearly_cluster_count_12):
            df_NPF['12'].values[mask_NPF],
            'ko',label = 'Normalized NPF occurence \n (sum of cluster 1 and 2)')
     ax.set_xlabel('Sea ice concentration [%] \n (Barents Sea and Greenland Sea)')
-    ax.set_ylabel("NPF events [a.u.] \n (hours normalized to data coverage)")
+    ax.set_ylabel("NPF events [a.u.] \n (hours/year normalized to data coverage)")
     
     varx = df_sea_ice['Sea ice conc (%)'].values[mask_ice]
     vary = df_NPF['12'].values[mask_NPF]
     
+    # print(df_NPF[mask_NPF])
     # Add annotations
 #     for xy in zip(varx, vary):                                       
 #         ax.annotate('(%s, %s)' % xy, xy=xy, textcoords=labels_str) 
@@ -1248,9 +1251,9 @@ def plotNPFvsSeaIce(sea_ice_annual,df_yearly_cluster_count_12):
 
     labels = years_ice[mask_ice]
     labels_str =[str(i) for i in labels] 
-    
+    # Add annotations
     for i in range(len(varx)):
-        plt.annotate(labels_str[i], (varx[i], vary[i] + 0.2))
+        ax.annotate(labels_str[i], (varx[i], vary[i] + 0.04))
         
     # Fit regression line 
     res = sc.stats.linregress(varx, vary)
@@ -1260,14 +1263,17 @@ def plotNPFvsSeaIce(sea_ice_annual,df_yearly_cluster_count_12):
 #     print('Intercept:',res.intercept)
 #     print('Slope:',res.slope)
 
+
     ax.plot(varx,
              res.intercept + res.slope*varx,
              'r-', 
             label='y = '+str( round(res.slope, 3) )+'x +' +str(round(res.intercept,3))
-           + ' \n $R^2$ = ' + str( round(res.rvalue**2,3) ) + ', $p$ = ' +str( round(res.pvalue,2) ) )
-    ax.legend(frameon = False, bbox_to_anchor=(1.65, 1))
+           + ', $R^2$ = ' + str( round(res.rvalue**2,3) )
+           + '\n Pearson\'s $r$ = ' + str( round(res.rvalue,3) )         
+           + '\n $p$ = ' +str( round(res.pvalue,2) ) )
+    ax.legend(frameon = False, bbox_to_anchor=(1.8, 1))
     plt.xlim(14.5,21.5)
-    plt.ylim(-0.1,1)
+    plt.ylim(0,0.6)
     plt.show()
 
     return
