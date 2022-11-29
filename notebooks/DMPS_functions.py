@@ -413,9 +413,11 @@ def checkUniqueModeDiam(df_norm_clustered,n_clusters):
     return
 
 def plotClustersNormalized(df_norm_clustered_1h_mean, diameters,
-                           df_norm_clustered_1h_mean_mean, df_norm_clustered_1h_std,
+                           df_norm_clustered_1h_mean_mean,
+                           df_norm_clustered_1h_10q,
+                           df_norm_clustered_1h_90q,
                           df_norm_clustered_1h_mean_median):
-    '''Plot the reults from the cluster analysis, median and mean + one std.'''
+    '''Plot the reults from the cluster analysis, median and mean + percentiles.'''
     fig, ax = plt.subplots(figsize=(10,4))
     
     
@@ -425,31 +427,41 @@ def plotClustersNormalized(df_norm_clustered_1h_mean, diameters,
     # Define colormap
     n = len(clusters)
     colors = cm.Set2(np.linspace(0,1,n))
-
+    
+    # Plot the clusters and shaded spread in the data
     for i in range(len(clusters)):
         cluster = clusters[i]
-        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_mean.iloc[i,:].values,
+        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values,
                 '-', label='cluster: '+str(cluster),
                 color=colors[i])
         ax.fill_between(diameters[1:-2]*10**9, 
-                        df_norm_clustered_1h_mean_mean.iloc[i,:].values + df_norm_clustered_1h_std.iloc[i,:].values,                    
-                        df_norm_clustered_1h_mean_mean.iloc[i,:].values - df_norm_clustered_1h_std.iloc[i,:].values,
+                        #Plot percentiles
+                        df_norm_clustered_1h_90q.iloc[i,:].values,
+                        df_norm_clustered_1h_10q.iloc[i,:].values,
+                        #For plotting std+mean
+                        #df_norm_clustered_1h_mean_mean.iloc[i,:].values + df_norm_clustered_1h_std.iloc[i,:].values,                    
+                        #df_norm_clustered_1h_mean_mean.iloc[i,:].values - df_norm_clustered_1h_std.iloc[i,:].values,
                         alpha=0.2,color=colors[i])
 
 
         # Plot the median to see similarity
-        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values, ':',color=colors[i])
+        #ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values, ':',color=colors[i])
+        
+        # Plot mean to see similarity
+        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_mean.iloc[i,:].values, ':',color=colors[i])
         #ax.set_xticks(bin_cols[::5])
         ax.set_xscale('log')
         ax.set_ylim(0,1.1)
+        
+        # Remove the top and right graph window
         for spine in ['top', 'right']:
             ax.spines[spine].set_visible(False)
             ax.spines[spine].set_linewidth(3)
 
 
-    plt.legend(frameon=False,bbox_to_anchor=(.9, 0.1))    
+    plt.legend(frameon=False,bbox_to_anchor=(1, 0.75))    
     plt.xlabel('Dp [nm]')
-    plt.title('1h mean clusters (mean+ 1std)')
+    plt.title('1h mean clusters (median + 10-90 percentiles)')
     plt.ylabel('Normalised particle concentration \n [relative]')
     plt.show()
     return
@@ -733,7 +745,7 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     
     month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
     
-    ax = plt.subplot(3, 1, 1)
+    ax = plt.subplot(3, 1, 1) #----------------------------------------------------
     
     
     # Plot abs diff median
@@ -744,6 +756,7 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
                 df_1h_annual_cycle_adiff_90q,
                 df_1h_annual_cycle_adiff_10q,
                 color ='r',alpha=0.1,label= str(10)+'-'+str(90)+' percentiles')
+
         
     # Plot abs diff mean
     ax.plot(df_1h_annual_cycle_adiff_mean.index, 
@@ -762,8 +775,14 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     # xticks color white
     plt.xticks(color='w')
     ax.set_ylabel('$|CPC_{UF}-CPC|$ \n [#/cm3]')
+
+    # Remove the top and right graph window
+    for spine in ['top', 'right']:
+        ax.spines[spine].set_visible(False)
+        ax.spines[spine].set_linewidth(3)    
     
-    ax = plt.subplot(3, 1, 2)
+    
+    ax = plt.subplot(3, 1, 2) #--------------------------------------------------------------------
     ax.axhline(y=0, color='k', linestyle='-',alpha = 0.7)
     # Plot diff median
     ax.plot(df_1h_annual_cycle_diff_median.index, 
@@ -784,9 +803,11 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     ax.fill_between(df_1h_annual_cycle_diff_mean.index,
                 df_1h_annual_cycle_diff_mean.values + df_1h_annual_cycle_adiff_std.values,
                 df_1h_annual_cycle_diff_mean.values - df_1h_annual_cycle_adiff_std.values,
-                color ='m',alpha=0.2,label = '+/-1$\sigma$',hatch = 'x')
+                color ='m',alpha=0.1,label = '+/-1$\sigma$',hatch = 'x')
     ax.set_ylabel('$CPC_{UF}-CPC$ \n [#/cm3]')
-    plt.legend(frameon=False,bbox_to_anchor=(1.57, 1))
+      
+    
+    plt.legend(frameon=False,bbox_to_anchor=(1.6, 1))
     plt.xticks(rotation = 45)
     # xticks color white
     plt.xticks(color='w')
@@ -797,17 +818,22 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     axt = ax.twinx()
     axt.plot(df_tmp_nxntot_median.index, 
             df_tmp_nxntot_median.values,
-            color ='k',linestyle = '--')
+            color ='k',linestyle = '--',
+            label = '$N_x/N_{tot}$')
     axt.fill_between(df_tmp_nxntot_median.index,
                 df_tmp_nxntot_90q,
                 df_tmp_nxntot_10q,
                 color ='k',alpha=0.1,label= str(10)+'-'+str(90)+' percentiles')
     axt.set_ylabel('$N_x/N_{tot}$ [a.u.]')
-     
+
+    # Remove the top and right graph window
+    for spine in ['top']:
+        axt.spines[spine].set_visible(False)
+        axt.spines[spine].set_linewidth(3)        
     
     plt.xticks(rotation = 45)
     plt.xticks(np.arange(1, 13, 1), month_names)
-    
+    plt.legend(frameon=False,bbox_to_anchor=(1.56, 0.4))
     
     #----------------------------------------------------------------------------------------------
     # Next subplot for clusters
@@ -833,7 +859,14 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
             alpha = 0.5,color = colors[i])
         i = i+1
     ax2.set_ylabel('Occurence \n [hours]')
-    plt.legend(frameon=False,bbox_to_anchor=(1.3, 1))    
+    
+    # Remove the top and right graph window
+    for spine in ['top', 'right']:
+        ax2.spines[spine].set_visible(False)
+        ax2.spines[spine].set_linewidth(3)    
+    
+    
+    plt.legend(frameon=False,bbox_to_anchor=(1.45, 1))    
     plt.xticks(np.arange(1, 13, 1), month_names)
     plt.xticks(rotation = 45)
     plt.show()
@@ -845,44 +878,65 @@ def makeDFforStackedPlot(df_norm_clustered_1h_mean, clusters):
     '''Make DF for the stacked plot'''
 
     df_norm_clustered_1h_mean_copy = df_norm_clustered_1h_mean.copy(deep = True)
-
+    
+    # Create empty df with colmumns like the name of the clusters
     df_clusters_month = pd.DataFrame(columns=clusters)
-    #print(df_clusters_month)
+    
 
     for cluster in clusters:
         df_cluster = df_norm_clustered_1h_mean_copy[df_norm_clustered_1h_mean_copy['clusters'] == cluster]
         df_cluster = df_cluster.copy() 
+        
 
+        # For cluster x add column month and set values in column month equal to the month in the index
         df_cluster.loc[:,'month'] =  df_cluster.index.month
 
+        
         # Calculate the occurence of cluster "cluster" per month
         df_cluster_count = df_cluster.groupby('month').count()
-        #print('df_cluster_count')
-        monthly_occurance = df_cluster_count.iloc[:,0].values
-        #print(monthly_occurance)
-        df_clusters_month[cluster] = monthly_occurance
 
+        
+        #print('df_cluster_count')
+        # We can take any column's values, rowwise values are all the same = total count per monts
+        monthly_occurance = df_cluster_count.iloc[:,0].values
+        
+        #print(monthly_occurance)
+        # Set values in column cluster to the montly counts
+        df_clusters_month[cluster] = monthly_occurance
+    
+    # Compute the sum of all observation by calulating the rowwise sum and add a new column called "total_freq"
     df_clusters_month['total_freq'] = df_clusters_month.sum(axis=1)
-    # Calculating the percentage 
+    # print(df_clusters_month)
+    
+    # Normalizing the frequency by dividing the total number of clusters by 
     df_clusters_month_ = df_clusters_month.div(df_clusters_month['total_freq'], axis=0) 
 
     df_clusters_month  = df_clusters_month_.copy(deep=True)
-
+    #print(df_clusters_month)
+    
     return df_clusters_month, df_cluster
 
 def makeStackedPlot(df_norm_clustered_1h_mean, clusters):
     '''Make stacked plot'''
     
     df_clusters_month, df_cluster = makeDFforStackedPlot(df_norm_clustered_1h_mean,clusters)
+    
+    #Fix so y-scale is in percentages
+    df = df_clusters_month.copy(deep = True)
+    # Multply all number objects by, happens to total freq as well, not good
+    df[df.select_dtypes(include=['number']).columns] *= 100
+    
+    
     month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
-    df_clusters_month[clusters].plot(kind='bar', 
+    
+    df[clusters].plot(kind='bar', 
                     stacked=True, 
                     colormap='Set2',
                     width = 0.9,            
                     figsize=(6, 4))
 
-    plt.ylabel("Normalized frequency")
-    plt.ylim(0,1)
+    plt.ylabel("Frequency [%] \n (Normalized for data cover)")
+    plt.ylim(0,100)
     plt.legend(title = 'Cluster:',frameon=False,bbox_to_anchor=(1, 1))
     plt.xticks(np.arange(0, 12, 1), month_names,)
     plt.xticks(rotation = 45)
@@ -1146,7 +1200,10 @@ def plotThielSen(df_norm_period, clusters,title):
         #plt.xticks(rotation = 45)
         i = i+1
 
-        
+        # Remove the top and right graph window
+        for spine in ['top', 'right']:
+            ax.spines[spine].set_visible(False)
+            ax.spines[spine].set_linewidth(3)
     
     fig.add_subplot(111, frame_on=False)
     plt.ylabel("NPF events [a.u.] \n (hours normalized to data coverage)")
@@ -1272,9 +1329,17 @@ def plotNPFvsSeaIce(sea_ice_annual,df_yearly_cluster_count_12):
            + '\n Pearson\'s $r$ = ' + str( round(res.rvalue,3) )         
            + '\n $p$ = ' +str( round(res.pvalue,2) ) )
     ax.legend(frameon = False, bbox_to_anchor=(1.8, 1))
+    
+    # Remove the top and right graph window
+    for spine in ['top', 'right']:
+        ax.spines[spine].set_visible(False)
+        ax.spines[spine].set_linewidth(3)    
+        
+    
     plt.xlim(14.5,21.5)
     plt.ylim(0,0.6)
     plt.show()
+
 
     return
     
