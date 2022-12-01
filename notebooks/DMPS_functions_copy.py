@@ -434,7 +434,7 @@ def plotClustersNormalized(df_norm_clustered_1h_mean, diameters,
         ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values,
                 '-', label='cluster: '+str(cluster),
                 color=colors[i],
-                linewidth = 3)
+                linewidth = 4)
         ax.fill_between(diameters[1:-2]*10**9, 
                         #Plot percentiles
                         df_norm_clustered_1h_90q.iloc[i,:].values,
@@ -449,7 +449,7 @@ def plotClustersNormalized(df_norm_clustered_1h_mean, diameters,
         #ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values, ':',color=colors[i])
         
         # Plot mean to see similarity
-        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_mean.iloc[i,:].values, ':',color=colors[i],linewidth = 3)
+        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_mean.iloc[i,:].values, ':',color=colors[i],linewidth = 4)
         #ax.set_xticks(bin_cols[::5])
         ax.set_xscale('log')
         ax.set_ylim(0,1.1)
@@ -813,7 +813,7 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     # xticks color white
     plt.xticks(color='w')
     
-    #--------------------------------------------------------------------------------------------
+    #------------
     
     # Plot Nx/Ntot
     axt = ax.twinx()
@@ -843,29 +843,23 @@ def plotNPFproxys(df_hourly_2010_2020_mean,df_norm_clustered_1h_mean,clusterIDs,
     # Define colormap
     n = len(clusterIDs)
     colors = cm.Set2(np.linspace(0,1,n))
-    
-    # Normalize for data cover--------------------------------------------
-    # Rows = months 0-11, columns = cluster occuerence normalized
-    df_clusters_month, df_cluster = makeDFforStackedPlot(df_norm_clustered_1h_mean, clusterIDs)
-    # --------------------------------------------------------------------
-    
     i = 0
     for clusterID in clusterIDs:
         
-        if clusterID < 3:
-            ax2.plot(df_clusters_month.index,df_clusters_month[clusterID].values,
-            '-o',label='cluster: '+str(clusterID),
-            color = colors[i],linewidth=3,markersize = 8)    
-
-        if clusterID > 2:
-            ax2.plot(df_clusters_month.index,df_clusters_month[clusterID].values,
-            '-x',label='cluster: '+str(clusterID),
-            alpha = 0.5,color = colors[i],linewidth=3,markersize = 8)
-        i = i+1
+        # Get clusters annual cycle 
+        # For one cluster:
+        dfmc,dfmy,dfy = groupDFs(df_norm_clustered_1h_mean,clusterID)
+        mcOcc, mcOcc_dt, myOcc, myOcc_dt, yOcc, yOcc_dt = calcNPFOccurence(dfmc,dfmy,dfy)
         
-
-    ax2.set_ylabel('Normalised occurence \n [hours]')
-    ax2.set_ylim([0,0.7])
+        if clusterID < 3:
+            ax2.plot(mcOcc_dt,mcOcc,'-o',label='cluster: '+str(clusterID),
+            color = colors[i],linewidth=3,markersize = 8)
+        
+        if clusterID > 2:
+            ax2.plot(mcOcc_dt,mcOcc,'-x',label='cluster: '+str(clusterID),
+            alpha = 0.5,color = colors[i])
+        i = i+1
+    ax2.set_ylabel('Occurence \n [hours]')
     
     # Remove the top and right graph window
     for spine in ['top', 'right']:
@@ -919,9 +913,7 @@ def makeDFforStackedPlot(df_norm_clustered_1h_mean, clusters):
     df_clusters_month_ = df_clusters_month.div(df_clusters_month['total_freq'], axis=0) 
 
     df_clusters_month  = df_clusters_month_.copy(deep=True)
-    # print(df_clusters_month)
-    # print(df_clusters_month.index)
-    # print(df_clusters_month[1].values)
+    #print(df_clusters_month)
     
     return df_clusters_month, df_cluster
 
@@ -1183,7 +1175,7 @@ def plotThielSen(df_norm_period, clusters,title):
 #         print('---------------------------')
 
         ax = plt.subplot(3,2,i)
-        ax.set_title('Cluster ' + str(cluster),fontsize=15, color = colors[cluster-1],fontweight='bold')
+        ax.set_title('Cluster ' + str(cluster))
         # Plot datapoints as x:es
         ax.plot(varx, vary, 'x:', color = colors[cluster-1])
         
@@ -1200,9 +1192,8 @@ def plotThielSen(df_norm_period, clusters,title):
 
         ax.plot(varx, intercept + slope * varx, '-', 
                  #label='y = '+str( round(cf *slope, 1) )+'x +' +str(round(intercept,1) ),
-                 label='Slope: '+str( round(cf *slope, 2) )+'%/year' + \
-                 #' \n Intercept: '+str(round(intercept,2)) ,
-                 ' \n y = '+str( round(slope, 3) )+'x +' +str(round(intercept,3)) ,
+                 label='Slope: '+str( round(cf *slope, 1) )+'%/year' + \
+                 ' \n y = '+str( round(cf *slope, 2) )+'x +' +str(round(intercept,2)) ,
                  color = colors[cluster-1])
         ax.fill_between(varx, 
                intercept + up_slope * varx,
@@ -1224,7 +1215,7 @@ def plotThielSen(df_norm_period, clusters,title):
             ax.spines[spine].set_linewidth(3)
     
     fig.add_subplot(111, frame_on=False)
-    plt.ylabel("Normalized cluster count [a.u.] \n (hours normalized to data coverage)")
+    plt.ylabel("NPF events [a.u.] \n (hours normalized to data coverage)")
     plt.xlabel('Consequtive months')
         
     #Needed to not mess up labels
@@ -1307,82 +1298,58 @@ def plotNPFvsSeaIce(sea_ice_annual,df_yearly_cluster_count_12):
 
     # Plot all annual counts, cluster 1,2 and 12
     cluster_list = ['1', '2', '12']
-    cluster_list_names = ['1', '2', '1+2']
     
-    n = len(cluster_list_names)
-    colors = cm.Dark2(np.linspace(0,1,n))
+    fig = plt.figure(figsize=(10, 10))
     
-    dot_colors = ['m','b','r']
-    title_colors = ['magenta','blue','red']
+    ax = plt.subplot(1,1,1)
     
-    fig = plt.figure(figsize=(8, 10))
+    ax.plot(df_sea_ice['Sea ice conc (%)'].values[mask_ice],
+           df_NPF['12'].values[mask_NPF],
+           'ko',label = 'Normalized NPF occurence \n (sum of cluster 1 and 2)')
+    ax.set_xlabel('Sea ice concentration [%] \n (Barents Sea and Greenland Sea)')
+    ax.set_ylabel("NPF events [a.u.] \n (hours/year normalized to data coverage)")
     
-    ii = 1
-    for cluster in cluster_list:
+    varx = df_sea_ice['Sea ice conc (%)'].values[mask_ice]
+    vary = df_NPF['12'].values[mask_NPF]
     
-        ax = plt.subplot(3,1,ii)
-        
-        ax.plot(df_sea_ice['Sea ice conc (%)'].values[mask_ice],
-               df_NPF[cluster].values[mask_NPF],
-               'o',color = dot_colors[ii-1])
-               #label = 'Normalized NPF occurence \n (cluster ' + str(cluster_list_names[ii-1]) + ' )')
-        
-        
-        varx = df_sea_ice['Sea ice conc (%)'].values[mask_ice]
-        vary = df_NPF[cluster].values[mask_NPF]
-        
-        # print(df_NPF[mask_NPF])
-        # Add annotations
-    #     for xy in zip(varx, vary):                                       
-    #         ax.annotate('(%s, %s)' % xy, xy=xy, textcoords=labels_str) 
-    #    ax.annotate(text[i], (x[i], y[i] + 0.2))
+    # print(df_NPF[mask_NPF])
+    # Add annotations
+#     for xy in zip(varx, vary):                                       
+#         ax.annotate('(%s, %s)' % xy, xy=xy, textcoords=labels_str) 
+#    ax.annotate(text[i], (x[i], y[i] + 0.2))
 
-        labels = years_ice[mask_ice]
-        labels_str =[str(i) for i in labels] 
-        # Add annotations
-        for i in range(len(varx)):
-            ax.annotate(labels_str[i], (varx[i], vary[i] + 0.04))
-            
-        # Fit regression line 
-        res = sc.stats.linregress(varx, vary)
-        #print(res.pvalue)
+    labels = years_ice[mask_ice]
+    labels_str =[str(i) for i in labels] 
+    # Add annotations
+    for i in range(len(varx)):
+        ax.annotate(labels_str[i], (varx[i], vary[i] + 0.04))
+        
+    # Fit regression line 
+    res = sc.stats.linregress(varx, vary)
+    #print(res.pvalue)
 
-    #     print(f"R-squared: {res.rvalue**2:.6f}")
-    #     print('Intercept:',res.intercept)
-    #     print('Slope:',res.slope)
+#     print(f"R-squared: {res.rvalue**2:.6f}")
+#     print('Intercept:',res.intercept)
+#     print('Slope:',res.slope)
 
 
-        ax.plot(varx,
-                 res.intercept + res.slope*varx,
-                 '-',color = 'k', 
-                label='y = '+str( round(res.slope, 2) )+'x +' +str(round(res.intercept,3))
-               + ', $R^2$ = ' + str( round(res.rvalue**2,2) )
-               + '\n Pearson\'s $r$ = ' + str( round(res.rvalue,2) )         
-               + '\n $p$ = ' +str( round(res.pvalue,2) ) )
-        ax.legend(frameon = False,loc = 'center left', bbox_to_anchor=(1, 0.5))
-        
-        # Remove the top and right graph window
-        for spine in ['top', 'right']:
-            ax.spines[spine].set_visible(False)
-            ax.spines[spine].set_linewidth(3)
-        
-        
-        ax.set_xlim([14.5,21.5])
-        ax.set_ylim([0,0.6])
-        
-        # Add a box with cluster names
-        # these are matplotlib.patch.Patch properties
-        props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-        
-        text = 'Cluster ' + cluster_list_names[ii-1]
-        ax.text(0.7, 0.95, text, transform=ax.transAxes, fontsize=14, bbox=props,
-        color = title_colors[ii-1],fontweight='bold',verticalalignment='top')
-        
-        #ax.text( 15, 0.1, text, size=15, color = title_colors[ii-1],fontweight='bold')
-        ii = ii+1
+    ax.plot(varx,
+             res.intercept + res.slope*varx,
+             'r-', 
+            label='y = '+str( round(res.slope, 3) )+'x +' +str(round(res.intercept,3))
+           + ', $R^2$ = ' + str( round(res.rvalue**2,3) )
+           + '\n Pearson\'s $r$ = ' + str( round(res.rvalue,3) )         
+           + '\n $p$ = ' +str( round(res.pvalue,2) ) )
+    ax.legend(frameon = False, bbox_to_anchor=(1.8, 1))
     
-    fig.supylabel("Total annual cluster count [a.u.] \n (hours normalized to data coverage)") 
-    fig.supxlabel('Sea ice concentration [%] \n (Barents Sea and Greenland Sea)')      
+    # Remove the top and right graph window
+    for spine in ['top', 'right']:
+        ax.spines[spine].set_visible(False)
+        ax.spines[spine].set_linewidth(3)    
+        
+    
+    plt.xlim(14.5,21.5)
+    plt.ylim(0,0.6)
     plt.show()
 
 
@@ -1547,7 +1514,7 @@ def makeSeasonalSizeDistPlot(df_norm_1h,diameters,df_norm_clustered_1h_mean_medi
                         #For plotting std+mean
                         #df_norm_clustered_1h_mean_mean.iloc[i,:].values + df_norm_clustered_1h_std.iloc[i,:].values,                    
                         #df_norm_clustered_1h_mean_mean.iloc[i,:].values - df_norm_clustered_1h_std.iloc[i,:].values,
-                        alpha=0.2,color=colors[i])
+                        alpha=0.5,color=colors[i])
         ax.set_xscale('log')
         ax.set_ylim(0,1.1)
         
@@ -1654,46 +1621,3 @@ def makeSeasonalSizeDistPlot(df_norm_1h,diameters,df_norm_clustered_1h_mean_medi
         
         
     return 
-    
-def plotMedianClusters(df_norm_clustered_median,diameters,n_clusters,clusters,df_norm_clustered_1h_mean_median):
-    
-    df_1h = df_norm_clustered_1h_mean_median.copy(deep = True)
-    df_daily = df_norm_clustered_median.copy(deep = True)
-    
-    df_median_clusters = df_daily.groupby('clusters').median()
-    df_quantile10_clusters = df_daily.groupby('clusters').quantile(.1)
-    df_quantile90_clusters = df_daily.groupby('clusters').quantile(.9)
-
-            
-    # Define colormap
-    n = len(clusters)
-    colors = cm.Set2(np.linspace(0,1,n)) 
-    
-    fig, ax = plt.subplots(figsize=(8,3))
-    # Plot the daily median clusters + spred
-    for i in range(n_clusters):
-        ax.plot(diameters*10**9, df_median_clusters.iloc[i,:].values, '-',
-                label=' Daily cluster: '+str(clusters[i]),color=colors[i])
-        ax.fill_between(diameters*10**9, df_quantile90_clusters.iloc[i,:].values,
-                            df_quantile10_clusters.iloc[i,:].values, alpha=0.2,
-                        linewidth = 3,color=colors[i])
-        
-        ax.set_xscale('log')
-        ax.set_ylim(0,1.1)
- 
-    
-    # Plot the 1h cluster median
-    for i in range(len(clusters)):
-        cluster = clusters[i]
-        ax.plot(diameters[1:-2]*10**9, df_norm_clustered_1h_mean_median.iloc[i,:].values,
-                ':', label='1h-cluster: '+str(clusters[i]),
-                color=colors[i],
-                linewidth = 4)
-    
-    plt.legend(frameon=False,loc = 'center left',bbox_to_anchor=(1, 0.5))
-    plt.xlabel('Dp [nm]')
-    plt.title('Median daily clusters VS 1h Clusters for k = 5')
-    plt.ylabel('Normalised concentration')
-    plt.show()
-    
-    return
